@@ -250,7 +250,7 @@ namespace csvorbis
 
 			// Discover our neighbors for decode where we don't use fit flags
 			// (that would push the neighbors outward) */
-			for (int j = 0; j < _n - 2; j++)
+			for (int j = 0; j < _n-2; j++)
 			{
 				int lo = 0;
 				int hi = 1;
@@ -258,7 +258,7 @@ namespace csvorbis
 				int hx = look.n;
 				int currentx = info.postlist[j + 2];
 
-				for (int k = 0; k < j + 2; k++)
+				for (int k = 0; k < j+2; k++)
 				{
 					int x = info.postlist[k];
 					if (x > lx && x < currentx)
@@ -419,9 +419,11 @@ namespace csvorbis
 			int ady = Math.Abs(dy);
 			int err = ady*(x - x0);
 
-			int off = (int) (err/adx);
-			if (dy < 0) return (y0 - off);
-			return (y0 + off);
+			int off = (err/adx);
+			if (dy < 0)
+				return (y0 - off);
+			else
+				return (y0 + off);
 		}
 
 		public override int inverse2(Block vb, Object i, Object memo, float[] fout)
