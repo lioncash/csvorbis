@@ -365,7 +365,7 @@ namespace csvorbis
 			}
 		}
 
-		private static void lpc_to_curve(float[] curve, float[] lpc, float amp, LookFloor0 l, String name, int frameno)
+		internal static void lpc_to_curve(float[] curve, float[] lpc, float amp, LookFloor0 l, String name, int frameno)
 		{
 			// l->m+1 must be less than l->ln, but guard in case we get a bad stream
 			float[] lcurve = new float[Math.Max(l.ln*2, l.m*2 + 2)];
@@ -410,7 +410,7 @@ namespace csvorbis
 		internal int[] linearmap;
 
 		internal InfoFloor0 vi;
-		internal Lpc lpclook=new Lpc();
+		internal Lpc lpclook = new Lpc();
 	}
 
 	internal class EchstateFloor0

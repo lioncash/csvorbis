@@ -55,10 +55,12 @@ namespace csvorbis
 			{
 				opb.write(info.class_dim[j] - 1, 3); // 1 to 8
 				opb.write(info.class_subs[j], 2);    // 0 to 3
+
 				if (info.class_subs[j] != 0)
 				{
 					opb.write(info.class_book[j], 8);
 				}
+
 				for (int k = 0; k < (1 << info.class_subs[j]); k++)
 				{
 					opb.write(info.class_subbook[j][k] + 1, 8);
@@ -96,7 +98,7 @@ namespace csvorbis
 			}
 
 			/* read partition classes */
-			for (int j = 0; j < maxclass + 1; j++)
+			for (int j = 0; j < maxclass+1; j++)
 			{
 				info.class_dim[j] = opb.read(3) + 1; // 1 to 8
 				info.class_subs[j] = opb.read(2);    // 0,1,2,3 bits
@@ -136,6 +138,12 @@ namespace csvorbis
 			for (int j = 0, k = 0; j < info.partitions; j++)
 			{
 				count += info.class_dim[info.partitionclass[j]];
+				if (count > VIF_POSIT)
+				{
+					info.free();
+					return null;
+				}
+
 				for (; k < count; k++)
 				{
 					int t = info.postlist[k + 2] = opb.read(rangebits);
