@@ -35,6 +35,9 @@ using csogg;
 
 namespace csvorbis 
 {
+	/// <summary>
+	/// Represents an OGG Vorbis file.
+	/// </summary>
 	public class VorbisFile : IDisposable
 	{
 		private const int CHUNKSIZE = 8500;
@@ -46,17 +49,17 @@ namespace csvorbis
 		private const int OV_EOF = -2;
 		private const int OV_HOLE = -3;
 
-		private const int OV_EREAD = -128;
-		private const int OV_EFAULT = -129;
-		private const int OV_EIMPL = -130;
-		private const int OV_EINVAL = -131;
-		private const int OV_ENOTVORBIS = -132;
-		private const int OV_EBADHEADER = -133;
-		private const int OV_EVERSION = -134;
-		private const int OV_ENOTAUDIO = -135;
-		private const int OV_EBADPACKET = -136;
-		private const int OV_EBADLINK = -137;
-		private const int OV_ENOSEEK = -138;
+		internal const int OV_EREAD = -128;
+		internal const int OV_EFAULT = -129;
+		internal const int OV_EIMPL = -130;
+		internal const int OV_EINVAL = -131;
+		internal const int OV_ENOTVORBIS = -132;
+		internal const int OV_EBADHEADER = -133;
+		internal const int OV_EVERSION = -134;
+		internal const int OV_ENOTAUDIO = -135;
+		internal const int OV_EBADPACKET = -136;
+		internal const int OV_EBADLINK = -137;
+		internal const int OV_ENOSEEK = -138;
 
 		private FileStream datasource;
 		private bool skable = false;
@@ -82,10 +85,9 @@ namespace csvorbis
 		private float bittrack;
 		private float samptrack;
 
-		private StreamState os;
-		private DspState vd;
-		private Block vb;
-
+		private readonly StreamState os;
+		private readonly DspState vd;
+		private readonly Block vb;
 
 		private VorbisFile()
 		{
@@ -96,6 +98,10 @@ namespace csvorbis
 			vb = new Block(vd);     // local working space for packet->PCM decode
 		}
 
+		/// <summary>
+		/// Constructor
+		/// </summary>
+		/// <param name="file">Path to the OGG Vorbis file to encapsulate.</param>
 		public VorbisFile(String file) : this()
 		{
 			FileStream inst;
@@ -104,7 +110,7 @@ namespace csvorbis
 			{
 				inst = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 			}
-			catch (Exception e)
+			catch (IOException e)
 			{
 				throw new csorbisException("VorbisFile: " + e.Message);
 			}
@@ -116,6 +122,12 @@ namespace csvorbis
 			}
 		}
 
+		/// <summary>
+		/// Constructor
+		/// </summary>
+		/// <param name="inst">FileStream instance containing a handle to the OGG Vorbis data.</param>
+		/// <param name="initial">Initial bytes to read.</param>
+		/// <param name="ibytes">Number of total bytes to read.</param>
 		public VorbisFile(FileStream inst, byte[] initial, int ibytes) : this()
 		{
 			open(inst, initial, ibytes);
@@ -371,7 +383,7 @@ namespace csvorbis
 		// vorbis_info structs and PCM positions.  Only called by the seekable
 		// initialization (local stream storage is hacked slightly; pay
 		// attention to how that's done)
-		void prefetch_all_headers(Info first_i,Comment first_c, int dataoffset)
+		private void prefetch_all_headers(Info first_i, Comment first_c, int dataoffset)
 		{
 			Page og = new Page();
 
@@ -387,11 +399,8 @@ namespace csvorbis
 				{
 					// we already grabbed the initial header earlier.  This just
 					// saves the waste of grabbing it again
-					// !!!!!!!!!!!!!
 					vi[i]=first_i;
-					//memcpy(vf->vi+i,first_i,sizeof(vorbis_info));
 					vc[i]=first_c;
-					//memcpy(vf->vc+i,first_c,sizeof(vorbis_comment));
 					dataoffsets[i]=dataoffset;
 				}
 				else
@@ -453,7 +462,7 @@ namespace csvorbis
 			return 0;
 		}
 
-		int open_seekable()
+		private int open_seekable()
 		{
 			Info initial_i = new Info();
 			Comment initial_c = new Comment();
@@ -502,7 +511,7 @@ namespace csvorbis
 			return raw_seek(0);
 		}
 
-		int open_nonseekable()
+		private int open_nonseekable()
 		{
 			//System.err.println("open_nonseekable");
 			// we cannot seek. Set up a 'single' (current) logical bitstream entry
@@ -520,7 +529,7 @@ namespace csvorbis
 		}
 
 		// clear out the current logical bitstream decoder
-		void decode_clear()
+		private void decode_clear()
 		{
 			os.clear();
 			vd.clear();
@@ -540,7 +549,7 @@ namespace csvorbis
 		//          0) need more date (only if readp==0)/eof
 		//          1) got a packet 
 
-		int process_packet(int readp)
+		private int process_packet(int readp)
 		{
 			Page og = new Page();
 
@@ -754,7 +763,6 @@ namespace csvorbis
 			return 0;
 		}
 
-
 		private static long ftell(FileStream fis)
 		{
 			try
@@ -786,13 +794,12 @@ namespace csvorbis
 
 		private int open_callbacks(FileStream iis, byte[] initial, int ibytes)
 		{
-			int ret;
-			datasource = iis;
-			//callbacks = _callbacks;
-			// init the framing state
+			this.datasource = iis;
+
+			// Initialize the framing state
 			oy.init();
 
-			// perhaps some data was previously read into a buffer for testing
+			// Perhaps some data was previously read into a buffer for testing
 			// against other stream types.  Allow initialization from this
 			// previously read data (as we may be reading from a non-seekable
 			// stream)
@@ -803,7 +810,8 @@ namespace csvorbis
 				oy.wrote(ibytes);
 			}
 
-			// can we seek? Stevens suggests the seek test was portable
+			// Can we seek? Stevens suggests the seek test was portable
+			int ret;
 			if (iis.CanSeek)
 			{
 				ret = open_seekable();
@@ -822,26 +830,37 @@ namespace csvorbis
 			return ret;
 		}
 
-		// How many logical bitstreams in this physical bitstream?
+		/// <summary>
+		/// Gets the number of logical bitstreams
+		/// within this physical bitstream.
+		/// </summary>
+		/// <returns>the number of logical bitstreams in this physical one.</returns>
 		public int streams()
 		{
 			return links;
 		}
 
-		// Is the FILE * associated with vf seekable?
+		/// <summary>
+		/// Whether or not this OGG Vorbis file is seekable.
+		/// </summary>
+		/// <returns>true if the OGG Vorbis file is seekable; false otherwise.</returns>
 		public bool seekable()
 		{
 			return skable;
 		}
 
-		// returns the bitrate for a given logical bitstream or the entire
-		// physical bitstream.  If the file is open for random access, it will
-		// find the *actual* average bitrate.  If the file is streaming, it
-		// returns the nominal bitrate (if set) else the average of the
-		// upper/lower bounds (if set) else -1 (unset).
-		// 
-		// If you want the actual bitrate field settings, get them from the
-		// vorbis_info structs
+		/// <summary>
+		/// Gets the bitrate for a given logical bitstream or the entire
+		/// physical bitstream.  If the file is open for random access, it will
+		/// find the *actual* average bitrate.  If the file is streaming, it
+		/// returns the nominal bitrate (if set) else the average of the
+		/// upper/lower bounds (if set) else -1 (unset).
+		/// 
+		/// If you want the actual bitrate field settings, get them from the
+		/// vorbis_info structs
+		/// </summary>
+		/// <param name="i">Bitstream index</param>
+		/// <returns>Bitrate for the given bitstream, or the entire physical bitstream.</returns>
 		public int bitrate(int i)
 		{
 			if (i >= links)
@@ -893,8 +912,14 @@ namespace csvorbis
 			}
 		}
 
-		// returns the actual bitrate since last call.  returns -1 if no
-		// additional data to offer since last call (or at beginning of stream)
+		/// <summary>
+		/// Gets the actual bitrate since last call.
+		/// </summary>
+		/// <returns>
+		/// Acutal bitrate since last call.
+		/// Returns -1 if there is no additional data to offer since the last call
+		/// (or if at the beginning of a stream).
+		/// </returns>
 		public int bitrate_instant()
 		{
 			if (samptrack == 0)
@@ -925,9 +950,13 @@ namespace csvorbis
 			}
 		}
 
-		// returns: total raw (compressed) length of content if i==-1
-		//          raw (compressed) length of that logical bitstream for i==0 to n
-		//          -1 if the stream is not seekable (we can't know the length)
+		/// <summary>
+		/// Gets total raw (compressed) length of content if i==-1.
+		/// Raw (compressed) length of that logical bitstream for i==0 to n
+		/// -1 if the stream is not seekable (we can't know the length)
+		/// </summary>
+		/// <param name="i">Bitstream Index</param>
+		/// <returns>Compressed length. Returns -1 if stream is not seekable.</returns>
 		public long raw_total(int i)
 		{
 			if (!skable || i >= links)
@@ -950,13 +979,16 @@ namespace csvorbis
 			}
 		}
 
-		// returns: total PCM length (samples) of content if i==-1
-		//          PCM length (samples) of that logical bitstream for i==0 to n
-		//          -1 if the stream is not seekable (we can't know the length)
+		/// <summary>
+		/// Gets the total PCM length (samples) of content if i==-1
+		//  PCM length (samples) of that logical bitstream for i==0 to n
+		/// </summary>
+		/// <param name="i">Bitstream index</param>
+		/// <returns>Total PCM length. Returns -1 if stream is not seekable.</returns>
 		public long pcm_total(int i)
 		{
 			if (!skable || i >= links)
-				return (-1);
+				return -1;
 
 			if (i < 0)
 			{
@@ -975,9 +1007,12 @@ namespace csvorbis
 			}
 		}
 
-		// returns: total seconds of content if i==-1
-		//          seconds in that logical bitstream for i==0 to n
-		//          -1 if the stream is not seekable (we can't know the length)
+		/// <summary>
+		/// Total seconds of content if i==-1
+		/// seconds in that logical bitstream for i==0 to n
+		/// </summary>
+		/// <param name="i">Bitstream index.</param>
+		/// <returns>Total seconds of current overall file or for a specific bitstream.</returns>
 		public float time_total(int i)
 		{
 			if (!skable || i >= links)
@@ -1000,14 +1035,15 @@ namespace csvorbis
 			}
 		}
 
-		// seek to an offset relative to the *compressed* data. This also
-		// immediately sucks in and decodes pages to update the PCM cursor. It
-		// will cross a logical bitstream boundary, but only if it can't get
-		// any packets out of the tail of the bitstream we seek to (so no
-		// surprises). 
-		// 
-		// returns zero on success, nonzero on failure
-
+		/// <summary>
+		/// Seek to an offset relative to the *compressed* data. This also
+		/// immediately sucks in and decodes pages to update the PCM cursor. It
+		/// will cross a logical bitstream boundary, but only if it can't get
+		/// any packets out of the tail of the bitstream we seek to (so no
+		/// surprises). 
+		/// </summary>
+		/// <param name="pos">Byte offset to seek to.</param>
+		/// <returns>Zero upon success; non-zero upon failure.</returns>
 		public int raw_seek(int pos)
 		{
 			// don't dump machine if we can't seek
@@ -1083,9 +1119,11 @@ namespace csvorbis
 			//return -1;
 		}
 
-		// seek to a sample offset relative to the decompressed pcm stream 
-		// returns zero on success, nonzero on failure
-
+		/// <summary>
+		/// Seek to a sample offset relative to the decompressed pcm stream 
+		/// </summary>
+		/// <param name="pos">Sample offset to seek to.</param>
+		/// <returns>Zero upon success; Non-zero upon failure.</returns>
 		public int pcm_seek(long pos)
 		{
 			int link = -1;
@@ -1212,8 +1250,12 @@ namespace csvorbis
 			//return -1;
 		}
 
-		// seek to a playback time relative to the decompressed pcm stream 
-		// returns zero on success, nonzero on failure
+		/// <summary>
+		/// Seek to a playback time relative to the decompressed PCM stream.
+		/// returns zero on success, nonzero on failure
+		/// </summary>
+		/// <param name="seconds">Number of seconds to seek relative to the current position.</param>
+		/// <returns>Zero upon success; Non-zero upon failure.</returns>
 		public int time_seek(float seconds)
 		{
 			// translate time to PCM position and call pcm_seek
@@ -1251,20 +1293,29 @@ namespace csvorbis
 			}
 		}
 
-		// tell the current stream offset cursor.  Note that seek followed by
-		// tell will likely not give the set offset due to caching
+		/// <summary>
+		/// Gets the current stream offset.
+		/// Note that seek followed by tell will likely not give the set offset due to caching.
+		/// </summary>
+		/// <returns>The current stream offset.</returns>
 		public long raw_tell()
 		{
 			return offset;
 		}
 
-		// return PCM offset (sample) of next PCM sample to be read
+		/// <summary>
+		/// Gets the PCM offset (sample) of the next PCM sample to be read
+		/// </summary>
+		/// <returns>the PCM offset (sample) of the next PCM sample to be read</returns>
 		public long pcm_tell()
 		{
 			return pcm_offset;
 		}
 
-		// return time offset (seconds) of next PCM sample to be read
+		/// <summary>
+		/// Gets the time offset (in seconds) of the next PCM sample to be read.
+		/// </summary>
+		/// <returns>the time offset (in seconds) of the next PCM sample to be read.</returns>
 		public float time_tell()
 		{
 			// translate time to PCM position and call pcm_seek
@@ -1292,13 +1343,17 @@ namespace csvorbis
 			return ((float) time_tot + (float) (pcm_offset - pcm_tot)/vi[link].rate);
 		}
 
-		//  link:   -1) return the vorbis_info struct for the bitstream section
-		//              currently being decoded
-		//         0-n) to request information for a specific bitstream section
-		//
-		// In the case of a non-seekable bitstream, any call returns the
-		// current bitstream.  NULL in the case that the machine is not
-		// initialized
+		/// <summary>
+		/// Requests information about a specified bitstream section.
+		/// </summary>
+		/// 
+		/// <param name="link">
+		/// The bitstream link. Pass -1 to get the Info
+		/// object of the current bitstream section being decoded.
+		/// Pass 0-n to get info about that specific bitstream sequence.
+		/// </param>
+		/// 
+		/// <returns>Information about a bitstream sequence.</returns>
 		public Info getInfo(int link)
 		{
 			if (skable)
@@ -1327,6 +1382,11 @@ namespace csvorbis
 			}
 		}
 
+		/// <summary>
+		/// Gets a specfic Vorbis comment based on its index in the overall comments.
+		/// </summary>
+		/// <param name="link">The vorbis comment index.</param>
+		/// <returns>A Vorbis comment based upon the given index.</returns>
 		public Comment getComment(int link)
 		{
 			if (skable)
@@ -1355,46 +1415,37 @@ namespace csvorbis
 			}
 		}
 
-		int host_is_big_endian() 
-		{
-			return 0;
-			//the above isn't really right...
-		}
-
-		// up to this point, everything could more or less hide the multiple
+		// Up to this point, everything could more or less hide the multiple
 		// logical bitstream nature of chaining from the toplevel application
 		// if the toplevel application didn't particularly care.  However, at
 		// the point that we actually read audio back, the multiple-section
 		// nature must surface: Multiple bitstream sections do not necessarily
 		// have to have the same number of channels or sampling rate.
-		// 
-		// read returns the sequential logical bitstream number currently
-		// being decoded along with the PCM data in order that the toplevel
-		// application can take action on channel/sample rate changes.  This
-		// number will be incremented even for streamed (non-seekable) streams
-		// (for seekable streams, it represents the actual logical bitstream
-		// index within the physical bitstream.  Note that the accessor
-		// functions above are aware of this dichotomy).
-		//
-		// input values: buffer) a buffer to hold packed PCM data for return
-		//               length) the byte length requested to be placed into buffer
-		//               bigendianp) should the data be packed LSB first (0) or
-		//                           MSB first (1)
-		//               word) word size for output.  currently 1 (byte) or 
-		//                     2 (16 bit short)
-		// 
-		// return values: -1) error/hole in data
-		//                 0) EOF
-		//                 n) number of bytes of PCM actually returned.  The
-		//                    below works on a packet-by-packet basis, so the
-		//                    return length is not related to the 'length' passed
-		//                    in, just guaranteed to fit.
-		// 
-		// *section) set to the logical bitstream number
 
-		public int read(byte[] buffer, int length, int bigendianp, int word, int sgned, int[] bitstream)
+		/// <summary>
+		/// read returns the sequential logical bitstream number currently
+		/// being decoded along with the PCM data in order that the toplevel
+		/// application can take action on channel/sample rate changes.  This
+		/// number will be incremented even for streamed (non-seekable) streams
+		/// (for seekable streams, it represents the actual logical bitstream
+		/// index within the physical bitstream.  Note that the accessor
+		/// functions above are aware of this dichotomy).
+		/// </summary>
+		/// <param name="buffer">Buffer that will hold the returned PCM data.</param>
+		/// <param name="length">Number of bytes to place into the PCM buffer.</param>
+		/// <param name="useBigEndian">Whether or not to use big-endian representation.</param>
+		/// <param name="word">Word size, can be either 1 (byte) or 2 (16-bit short)</param>
+		/// <param name="signed">Whether or not the stream is signed.</param>
+		/// <param name="bitstream"></param>
+		/// <returns>
+		/// -1 - if an error/hole in data has occurred.
+		///  0 - if end of file has been reached.
+		///  N - number of PCM bytes actually returned.
+		/// </returns>
+		public int read(byte[] buffer, int length, bool useBigEndian, int word, bool signed, int[] bitstream)
 		{
-			int host_endian = host_is_big_endian();
+			// Test if the computer arch running this is big endian.
+			bool hostIsBigEndian = !BitConverter.IsLittleEndian;
 			int index = 0;
 
 			while (true)
@@ -1414,15 +1465,14 @@ namespace csvorbis
 
 						// a tight loop to pack each size
 						{
-							int val;
 							if (word == 1)
 							{
-								int off = (sgned != 0 ? 0 : 128);
+								int off = (signed ? 0 : 128);
 								for (int j = 0; j < samples; j++)
 								{
 									for (int i = 0; i < channels; i++)
 									{
-										val = (int) (pcm[i][_index[i] + j]*128.0 + 0.5);
+										int val = (int) (pcm[i][_index[i] + j]*128.0 + 0.5);
 
 										if (val > 127)
 											val = 127;
@@ -1435,11 +1485,11 @@ namespace csvorbis
 							}
 							else
 							{
-								int off = (sgned != 0 ? 0 : 32768);
+								int off = (signed ? 0 : 32768);
 
-								if (host_endian == bigendianp)
+								if (hostIsBigEndian == useBigEndian)
 								{
-									if (sgned != 0)
+									if (signed)
 									{
 										for (int i = 0; i < channels; i++)
 										{
@@ -1448,7 +1498,7 @@ namespace csvorbis
 											int dest = i*2;
 											for (int j = 0; j < samples; j++)
 											{
-												val = (int) (pcm[i][src + j]*32767.0);
+												int val = (int) (pcm[i][src + j]*32767.0);
 
 												if (val > 32767)
 													val = 32767;
@@ -1469,7 +1519,7 @@ namespace csvorbis
 											int dest = i;
 											for (int j = 0; j < samples; j++)
 											{
-												val = (int) (src[j]*32768.0 + 0.5);
+												int val = (int) (src[j]*32768.0 + 0.5);
 
 												if (val > 32767)
 													val = 32767;
@@ -1483,13 +1533,13 @@ namespace csvorbis
 										}
 									}
 								}
-								else if (bigendianp != 0)
+								else if (!useBigEndian)
 								{
 									for (int j = 0; j < samples; j++)
 									{
 										for (int i = 0; i < channels; i++)
 										{
-											val = (int) (pcm[i][j]*32768.0 + 0.5);
+											int val = (int) (pcm[i][j]*32768.0 + 0.5);
 
 											if (val > 32767)
 												val = 32767;
@@ -1504,12 +1554,11 @@ namespace csvorbis
 								}
 								else
 								{
-									//int val;
 									for (int j = 0; j < samples; j++)
 									{
 										for (int i = 0; i < channels; i++)
 										{
-											val = (int) (pcm[i][j]*32768.0 + 0.5);
+											int val = (int) (pcm[i][j]*32768.0 + 0.5);
 
 											if (val > 32767)
 												val = 32767;
@@ -1545,16 +1594,22 @@ namespace csvorbis
 						return -1;
 				}
 			}
-
-			//return -1;
 		}
 
+		/// <summary>
+		/// Gets the Vorbis info within this file.
+		/// </summary>
+		/// <returns>the Vorbis info within this file.</returns>
 		public Info[] getInfo()
 		{
 			return vi;
 		}
 
-		public Comment[] getComment()
+		/// <summary>
+		/// Gets the Vorbis comments within this file.
+		/// </summary>
+		/// <returns>the Vorbis comment within this file.</returns>
+		public Comment[] getComments()
 		{
 			return vc;
 		}
