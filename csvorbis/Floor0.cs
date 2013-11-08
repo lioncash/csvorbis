@@ -32,7 +32,7 @@ namespace csvorbis
 	{
 		public override void pack(object i, csBuffer opb)
 		{
-			InfoFloor0 info = (InfoFloor0)i;
+			InfoFloor0 info = (InfoFloor0) i;
 			opb.write(info.order, 8);
 			opb.write(info.rate, 16);
 			opb.write(info.barkmap, 16);
@@ -40,8 +40,8 @@ namespace csvorbis
 			opb.write(info.ampdB, 8);
 			opb.write(info.numbooks - 1, 4);
 
-			for(int j=0;j<info.numbooks;j++)
-				opb.write(info.books[j],8);
+			for (int j = 0; j < info.numbooks; j++)
+				opb.write(info.books[j], 8);
 		}
 
 		public override object unpack(Info vi, csBuffer opb)
@@ -76,19 +76,19 @@ namespace csvorbis
 
 		public override object look(DspState vd, InfoMode mi, object i)
 		{
-			Info vi=vd.vi;
-			InfoFloor0 info=(InfoFloor0)i;
-			LookFloor0 look=new LookFloor0();
-			look.m=info.order;
-			look.n=vi.blocksizes[mi.blockflag]/2;
-			look.ln=info.barkmap;
-			look.vi=info;
-			look.lpclook.init(look.ln,look.m);
+			Info vi = vd.vi;
+			InfoFloor0 info = (InfoFloor0) i;
+			LookFloor0 look = new LookFloor0();
+			look.m = info.order;
+			look.n = vi.blocksizes[mi.blockflag]/2;
+			look.ln = info.barkmap;
+			look.vi = info;
+			look.lpclook.init(look.ln, look.m);
 
 			// we choose a scaling constant so that:
 			// floor(bark(rate/2-1)*C)=mapped-1
 			// floor(bark(rate/2)*C)=mapped
-			float scale = look.ln / (float)toBARK((float)(info.rate/2.0));
+			float scale = look.ln/(float) toBARK((float) (info.rate/2.0));
 
 			// the mapping from a linear scale to a smaller bark scale is
 			// straightforward.  We do *not* make sure that the linear mapping
@@ -96,19 +96,23 @@ namespace csvorbis
 			// the encoder may do what it wishes in filling them.  They're
 			// necessary in some mapping combinations to keep the scale spacing
 			// accurate
-			look.linearmap=new int[look.n];
+			look.linearmap = new int[look.n];
 
-			for(int j=0; j<look.n; j++)
+			for (int j = 0; j < look.n; j++)
 			{
-				int val=(int)Math.Floor(toBARK((float)((info.rate/2.0)/look.n*j)) 
-					*scale); // bark numbers represent band edges
-				if(val>=look.ln) val=look.ln; // guard against the approximation
-				look.linearmap[j]=val;
+				int val = (int) Math.Floor(toBARK((float) ((info.rate/2.0)/look.n*j))
+				                           *scale); // bark numbers represent band edges
+				// guard against the approximation
+				if (val >= look.ln)
+					val = look.ln;
+
+				look.linearmap[j] = val;
 			}
+
 			return look;
 		}
 
-		private static double toBARK(float f)
+		internal static double toBARK(float f)
 		{
 			double a = 13.1*Math.Atan(0.00074*f);
 			double b = 2.24*Math.Atan(f*f*1.85e-8);
@@ -117,7 +121,7 @@ namespace csvorbis
 			return (a + b + c);
 		}
 
-		private object state(object i)
+		internal object state(object i)
 		{
 			EchstateFloor0 state = new EchstateFloor0();
 			InfoFloor0 info = (InfoFloor0) i;
@@ -129,28 +133,40 @@ namespace csvorbis
 			return state;
 		}
 
-		public override void free_info(object i){}
-		public override void free_look(object i){}
-		public override void free_state(object vs){}
-		public override int forward(Block vb, object i,  float[] fin, float[] fout, object vs) { return 0; }
+		public override void free_info(object i)
+		{
+		}
+
+		public override void free_look(object i)
+		{
+		}
+
+		public override void free_state(object vs)
+		{
+		}
+
+		public override int forward(Block vb, object i, float[] fin, float[] fout, object vs)
+		{
+			return 0;
+		}
 
 		private float[] lsp = null;
-		private int inverse(Block vb, Object i, float[] fout)
+
+		internal int inverse(Block vb, Object i, float[] fout)
 		{
 			//System.err.println("Floor0.inverse "+i.getClass()+"]");
-			LookFloor0 look=(LookFloor0)i;
-			InfoFloor0 info=look.vi;
-			int ampraw=vb.opb.read(info.ampbits);
+			LookFloor0 look = (LookFloor0) i;
+			InfoFloor0 info = look.vi;
+			int ampraw = vb.opb.read(info.ampbits);
 			if (ampraw > 0)
 			{
 				// also handles the -1 out of data case
 				int maxval = (1 << info.ampbits) - 1;
 				float amp = (float) ampraw/maxval*info.ampdB;
-				int booknum = vb.opb.read(ilog(info.numbooks));
+				int booknum = vb.opb.read(Util.ilog(info.numbooks));
 
 				if (booknum != -1 && booknum < info.numbooks)
 				{
-
 					lock (this)
 					{
 						if (lsp == null || lsp.Length < look.m)
@@ -195,14 +211,8 @@ namespace csvorbis
 
 							last = lsp[j - 1];
 						}
+
 						// take the coefficients back to a spectral envelope curve
-						/*
-						lsp_to_lpc(out,out,look.m); 
-						lpc_to_curve(out,out,amp,look,"",0);
-						for(int j=0;j<look.n;j++){
-						  out[j]=fromdB(out[j]-info.ampdB);
-						}
-						*/
 						Lsp.lsp_to_curve(fout, look.linearmap, look.n, look.ln,
 							lsp, look.m, amp, info.ampdB);
 
@@ -216,7 +226,6 @@ namespace csvorbis
 
 		public override object inverse1(Block vb, object i, object memo)
 		{
-			//System.err.println("Floor0.inverse "+i.getClass()+"]");
 			LookFloor0 look = (LookFloor0) i;
 			InfoFloor0 info = look.vi;
 			float[] lsp = null;
@@ -231,7 +240,7 @@ namespace csvorbis
 				// also handles the -1 out of data case
 				int maxval = (1 << info.ampbits) - 1;
 				float amp = (float) ampraw/maxval*info.ampdB;
-				int booknum = vb.opb.read(ilog(info.numbooks));
+				int booknum = vb.opb.read(Util.ilog(info.numbooks));
 
 				if (booknum != -1 && booknum < info.numbooks)
 				{
@@ -276,117 +285,111 @@ namespace csvorbis
 			return null;
 		}
 
-		override public int inverse2(Block vb, Object i, Object memo, float[] fout)
+		public override int inverse2(Block vb, Object i, Object memo, float[] fout)
 		{
-			//System.err.println("Floor0.inverse "+i.getClass()+"]");
-			LookFloor0 look=(LookFloor0)i;
-			InfoFloor0 info=look.vi;
+			LookFloor0 look = (LookFloor0) i;
+			InfoFloor0 info = look.vi;
 
-			if(memo!=null)
+			if (memo != null)
 			{
-				float[] lsp=(float[])memo;
-				float amp=lsp[look.m];
+				float[] lsp = (float[]) memo;
+				float amp = lsp[look.m];
 
-				Lsp.lsp_to_curve(fout,look.linearmap,look.n,look.ln,                 
-					lsp,look.m,amp,info.ampdB);    
-				return(1);
+				Lsp.lsp_to_curve(fout, look.linearmap, look.n, look.ln,
+					lsp, look.m, amp, info.ampdB);
+				return (1);
 			}
-			//  eop:
-			//    memset(out,0,sizeof(float)*look->n);
-			for(int j=0; j<look.n; j++)
-			{
-				fout[j]=0.0f;
-			} 
-			return(0);
-		}
 
-		static float fromdB(float x)
-		{
-			return (float)(Math.Exp((x)*.11512925));
-		}
-		private static int ilog(int v)
-		{
-			int ret=0;
-			while(v!=0)
+			for (int j = 0; j < look.n; j++)
 			{
-				ret++;
-				v = (int)((uint)v >> 1);
+				fout[j] = 0.0f;
 			}
-			return(ret);
+
+			return 0;
 		}
 
-		static void lsp_to_lpc(float[] lsp, float[] lpc, int m)
-		{ 
-			int i,j,m2=m/2;
-			float[] O=new float[m2];
-			float[] E=new float[m2];
-			float A;
-			float[] Ae=new float[m2+1];
-			float[] Ao=new float[m2+1];
-			float B;
-			float[] Be=new float[m2];
-			float[] Bo=new float[m2];
-			float temp;
+		internal static float fromdB(float x)
+		{
+			return (float) (Math.Exp((x)*.11512925));
+		}
+
+		internal static void lsp_to_lpc(float[] lsp, float[] lpc, int m)
+		{
+			int i, j, m2 = m/2;
+			float[] O = new float[m2];
+			float[] E = new float[m2];
+			float[] Ae = new float[m2 + 1];
+			float[] Ao = new float[m2 + 1];
+			float[] Be = new float[m2];
+			float[] Bo = new float[m2];
 
 			// even/odd roots setup
-			for(i=0;i<m2;i++)
+			for (i = 0; i < m2; i++)
 			{
-				O[i]=(float)(-2.0*Math.Cos(lsp[i*2]));
-				E[i]=(float)(-2.0*Math.Cos(lsp[i*2+1]));
+				O[i] = (float) (-2.0*Math.Cos(lsp[i*2]));
+				E[i] = (float) (-2.0*Math.Cos(lsp[i*2 + 1]));
 			}
 
 			// set up impulse response
-			for(j=0;j<m2;j++)
+			for (j = 0; j < m2; j++)
 			{
-				Ae[j]=0.0f;
-				Ao[j]=1.0f;
-				Be[j]=0.0f;
-				Bo[j]=1.0f;
+				Ae[j] = 0.0f;
+				Ao[j] = 1.0f;
+				Be[j] = 0.0f;
+				Bo[j] = 1.0f;
 			}
-			Ao[j]=1.0f;
-			Ae[j]=1.0f;
+			Ao[j] = 1.0f;
+			Ae[j] = 1.0f;
 
 			// run impulse response
-			for(i=1;i<m+1;i++)
+			for (i = 1; i < m + 1; i++)
 			{
-				A=B=0.0f;
-				for(j=0;j<m2;j++)
-				{
-					temp=O[j]*Ao[j]+Ae[j];
-					Ae[j]=Ao[j];
-					Ao[j]=A;
-					A+=temp;
+				float A = 0.0f;
+				float B = 0.0f;
 
-					temp=E[j]*Bo[j]+Be[j];
-					Be[j]=Bo[j];
-					Bo[j]=B;
-					B+=temp;
+				for (j = 0; j < m2; j++)
+				{
+					float temp = O[j]*Ao[j] + Ae[j];
+					Ae[j] = Ao[j];
+					Ao[j] = A;
+					A += temp;
+
+					temp = E[j]*Bo[j] + Be[j];
+					Be[j] = Bo[j];
+					Bo[j] = B;
+					B += temp;
 				}
-				lpc[i-1]=(A+Ao[j]+B-Ae[j])/2;
-				Ao[j]=A;
-				Ae[j]=B;
+				lpc[i - 1] = (A + Ao[j] + B - Ae[j])/2;
+				Ao[j] = A;
+				Ae[j] = B;
 			}
 		}
 
-		static void lpc_to_curve(float[] curve, float[] lpc,float amp,
-			LookFloor0 l, String name, int frameno)
+		private static void lpc_to_curve(float[] curve, float[] lpc, float amp, LookFloor0 l, String name, int frameno)
 		{
 			// l->m+1 must be less than l->ln, but guard in case we get a bad stream
-			float[] lcurve=new float[Math.Max(l.ln*2,l.m*2+2)];
+			float[] lcurve = new float[Math.Max(l.ln*2, l.m*2 + 2)];
 
-			if(amp==0)
+			if (amp == 0)
 			{
-				//memset(curve,0,sizeof(float)*l->n);
-				for(int j=0; j<l.n; j++)curve[j]=0.0f;
+				for (int j = 0; j < l.n; j++)
+				{
+					curve[j] = 0.0f;
+				}
+
 				return;
 			}
-			l.lpclook.lpc_to_curve(lcurve,lpc,amp);
 
-			for(int i=0;i<l.n;i++)curve[i]=lcurve[l.linearmap[i]];
+			l.lpclook.lpc_to_curve(lcurve, lpc, amp);
+
+			for (int i = 0; i < l.n; i++)
+			{
+				curve[i] = lcurve[l.linearmap[i]];
+			}
 		}
 	}
 
-	class InfoFloor0
+	internal class InfoFloor0
 	{
 		internal int order;
 		internal int rate;
@@ -399,7 +402,7 @@ namespace csvorbis
 		internal int[] books=new int[16];
 	}
 
-	class LookFloor0
+	internal class LookFloor0
 	{
 		internal int n;
 		internal int ln;
@@ -410,7 +413,7 @@ namespace csvorbis
 		internal Lpc lpclook=new Lpc();
 	}
 
-	class EchstateFloor0
+	internal class EchstateFloor0
 	{
 		internal int[] codewords;
 		internal float[] curve;
