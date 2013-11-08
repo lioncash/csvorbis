@@ -35,7 +35,7 @@ namespace csvorbis
 
 		internal void backward(float[] data)
 		{
-			if(n == 1)
+			if (n == 1)
 				return;
 
 			drftb1(n,data,trigcache,trigcache,n,splitcache);
@@ -43,9 +43,9 @@ namespace csvorbis
 
 		internal void init(int n)
 		{
-			this.n=n;
-			trigcache=new float[3*n];
-			splitcache=new int[32];
+			this.n = n;
+			trigcache = new float[3*n];
+			splitcache = new int[32];
 			fdrffti(n, trigcache, splitcache);
 		}
 
@@ -321,10 +321,10 @@ namespace csvorbis
 			float[] c2, float[] ch, float[] ch2, float[] wa, int index)
 		{
 			int idij,ipph,i,j,k,l,ic,ik,iis;
-			int t0,t1,t2=0,t3,t4,t5,t6,t7,t8,t9,t10;
+			int t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,t10;
 			float dc2,ai1,ai2,ar1,ar2,ds2;
 			int nbd;
-			float dcp=0,arg,dsp=0,ar1h,ar2h;
+			float dcp,arg,dsp,ar1h,ar2h;
 			int idp2,ipp2;
   
 			arg=tpi/(float)ip;
@@ -705,8 +705,11 @@ namespace csvorbis
 			L110: l2=l1;
 			}
 
-			if(na==1)return;
-			for(i=0;i<n;i++)c[i]=ch[i];
+			if (na == 1)
+				return;
+
+			for (i = 0; i < n; i++)
+				c[i] = ch[i];
 		}
 
 		static void dradb2(int ido,int l1,float[] cc,float[] ch,float[] wa1, int index)
@@ -715,7 +718,7 @@ namespace csvorbis
 			float ti2,tr2;
 
 			t0=l1*ido;
-    
+
 			t1=0;
 			t2=0;
 			t3=(ido<<1)-1;
@@ -919,7 +922,7 @@ namespace csvorbis
 				ch[t5+=t0]=sqrt2*(tr1-ti1);
 				ch[t5+=t0]=ti2+ti2;
 				ch[t5+=t0]=-sqrt2*(tr1+ti1);
-      
+
 				t3+=ido;
 				t1+=t2;
 				t4+=t2;
@@ -930,12 +933,12 @@ namespace csvorbis
 			float[] c2,float[] ch,float[] ch2,float[] wa, int index )
 		{
 
-			int idij,ipph=0,i,j,k,l,ik,iis,t0=0,t1,t2,t3,t4,t5,t6,t7,t8,t9,t10=0,
-				t11,t12;
+			int idij,ipph,i,j,k,l,ik,iis;
+			int t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12;
 			float dc2,ai1,ai2,ar1,ar2,ds2;
-			int nbd=0;
-			float dcp=0,arg,dsp=0,ar1h,ar2h;
-			int ipp2=0;
+			int nbd;
+			float dcp,arg,dsp,ar1h,ar2h;
+			int ipp2;
 
 			t10=ip*ido;
 			t0=l1*ido;
@@ -946,7 +949,7 @@ namespace csvorbis
 			ipp2=ip;
 			ipph=(int)((uint)(ip+1)>>1);
 			if(ido<l1) goto L103;
-										
+
 			t1=0;
 			t2=0;
 			for(k=0;k<l1;k++)
@@ -999,7 +1002,7 @@ namespace csvorbis
 			}
 			if (ido == 1) goto L116;
 			if(nbd<l1) goto L112;
-										
+
 			t1=0;
 			t2=ipp2*t0;
 			t7=0;
@@ -1035,7 +1038,7 @@ namespace csvorbis
 				}
 			}
 			goto L116;
-							
+
 			L112: t1=0;
 			t2=ipp2*t0;
 			t7=0;
@@ -1218,7 +1221,7 @@ namespace csvorbis
 			}
 
 			if(nbd>l1) goto L139;
-										
+
 			iis= -ido-1;
 			t1=0;
 			for(j=1;j<ip;j++)
@@ -1267,9 +1270,9 @@ namespace csvorbis
 
 		static void drftb1(int n, float[] c, float[] ch, float[] wa, int index, int[] ifac)
 		{
-			int i,k1,l1,l2=0;
+			int i,k1,l1,l2;
 			int na;
-			int nf,ip=0,iw,ix2,ix3,ido=0,idl1=0;
+			int nf,ip,iw,ix2,ix3,ido,idl1;
 
 			nf=ifac[1];
 			na=0;
@@ -1326,7 +1329,10 @@ namespace csvorbis
 						dradbg(ido, ip, l1, idl1, ch, ch, ch, c, c, wa, index + iw - 1);
 					else
 						dradbg(ido, ip, l1, idl1, c, c, c, ch, ch, wa, index + iw - 1);
-					if (ido == 1) na = 1 - na;
+
+					if (ido == 1)
+						na = 1 - na;
+
 					l1 = l2;
 					iw += (ip - 1)*ido;
 				}

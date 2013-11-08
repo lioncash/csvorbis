@@ -85,14 +85,18 @@ namespace csogg
 
 		public void init(int serialno)
 		{
-			if(body_data==null){ init(); }
+			if (body_data == null)
+			{
+				init();
+			}
 			else
 			{
 				for(int i=0; i<body_data.Length; i++) body_data[i]=0;
 				for(int i=0; i<lacing_vals.Length; i++) lacing_vals[i]=0;
 				for(int i=0; i<granule_vals.Length; i++) granule_vals[i]=0;
 			}
-			this.serialno=serialno;
+
+			this.serialno = serialno;
 		}
 
 		public void clear()
@@ -443,9 +447,7 @@ namespace csogg
 
 			/* Construct the header in temp storage */
 
-			string oggs_str = "OggS";
-			Encoding AE = Encoding.UTF8;
-			byte[] oggs_byt = AE.GetBytes(oggs_str);
+			byte[] oggs_byt = Encoding.UTF8.GetBytes("OggS");
 			Array.Copy(oggs_byt, 0, header, 0, oggs_byt.Length);
 
 			/* Stream structure version */

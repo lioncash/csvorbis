@@ -138,10 +138,8 @@ namespace csvorbis
 
 		internal void init(int mapped, int m)
 		{
-			//memset(l,0,sizeof(lpc_lookup));
-			
-			ln=mapped;
-			this.m=m;
+			ln = mapped;
+			this.m = m;
 
 			// we cheat decoding the LPC spectrum via FFTs
 			fft.init(mapped*2);

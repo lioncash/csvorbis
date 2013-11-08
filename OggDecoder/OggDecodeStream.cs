@@ -434,6 +434,7 @@ namespace OggDecoder
 
 		public override long Seek(long offset, SeekOrigin origin)
 		{
+			// TODO: Recursive loop. Fix this.
 			return Seek(offset, origin);
 		}
 
