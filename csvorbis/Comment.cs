@@ -33,10 +33,9 @@ namespace csvorbis
 	// static storage
 	public class Comment
 	{
-		private const string _vorbis="vorbis";
+		private const string _vorbis = "vorbis";
 
-		//private static int OV_EFAULT=-129;
-		private const int OV_EIMPL=-130;
+		private const int OV_EIMPL = -130;
 
 		// unlimited user comment fields.  libvorbis writes 'libvorbis'
 		// whatever vendor is set to in encode
@@ -47,9 +46,9 @@ namespace csvorbis
 
 		public void init()
 		{
-			user_comments=null;
-			comments=0;
-			vendor=null;
+			user_comments = null;
+			comments = 0;
+			vendor = null;
 		}
 
 		public void add(string comment)
@@ -61,61 +60,52 @@ namespace csvorbis
 
 		private void add(byte[] comment)
 		{
-			byte[][] foo=new byte[comments+2][];
-			if(user_comments!=null)
+			byte[][] foo = new byte[comments + 2][];
+			if (user_comments != null)
 			{
 				Array.Copy(user_comments, 0, foo, 0, comments);
 			}
-			user_comments=foo;
+			user_comments = foo;
 
-			int[] goo=new int[comments+2];
-			if(comment_lengths!=null)
+			int[] goo = new int[comments + 2];
+			if (comment_lengths != null)
 			{
 				Array.Copy(comment_lengths, 0, goo, 0, comments);
 			}
-			comment_lengths=goo;
+			comment_lengths = goo;
 
-			byte[] bar=new byte[comment.Length+1];
+			byte[] bar = new byte[comment.Length + 1];
 			Array.Copy(comment, 0, bar, 0, comment.Length);
-			user_comments[comments]=bar;
-			comment_lengths[comments]=comment.Length;
+			user_comments[comments] = bar;
+			comment_lengths[comments] = comment.Length;
 			comments++;
-			user_comments[comments]=null;
+			user_comments[comments] = null;
 		}
 
 		public void add_tag(string tag, string contents)
 		{
-			if(contents==null) contents="";
-			add(tag+"="+contents);
+			if (contents == null)
+				contents = "";
+
+			add(tag + "=" + contents);
 		}
 
-		/*
-		  private void add_tag(byte[] tag, byte[] contents){
-			byte[] foo=new byte[tag.length+contents.length+1];
-			int j=0; 
-			for(int i=0; i<tag.length; i++){foo[j++]=tag[i];}
-			foo[j++]=(byte)'='; j++;
-			for(int i=0; i<contents.length; i++){foo[j++]=tag[i];}
-			add(foo);
-		  }
-		*/
- 
 		// This is more or less the same as strncasecmp - but that doesn't exist
 		// * everywhere, and this is a fairly trivial function, so we include it
 		static bool tagcompare(byte[] s1, byte[] s2, int n)
 		{
-			int c=0;
-			byte u1, u2;
-			while(c < n)
+			int c = 0;
+
+			while (c < n)
 			{
-				u1=s1[c]; 
-				u2=s2[c];
+				byte u1 = s1[c];
+				byte u2 = s2[c];
 
-				if(u1 >='A')
-					u1 = (byte)(u1-'A'+'a');
+				if (u1 >= 'A')
+					u1 = (byte) (u1 - 'A' + 'a');
 
-				if(u2 >= 'A')
-					u2 = (byte)(u2-'A'+'a');
+				if (u2 >= 'A')
+					u2 = (byte) (u2 - 'A' + 'a');
 
 				if (u1 != u2)
 				{
@@ -124,6 +114,7 @@ namespace csvorbis
 
 				c++;
 			}
+
 			return true;
 		}
 
@@ -136,18 +127,21 @@ namespace csvorbis
 		{
 			Encoding AE = Encoding.UTF8;
 			byte[] tag_byt = AE.GetBytes(tag);
-			
-			int foo=query(tag_byt, count);
-			if(foo==-1) return null;
-			byte[] comment=user_comments[foo];
-			for(int i=0; i<comment_lengths[foo]; i++)
+
+			int foo = query(tag_byt, count);
+			if (foo == -1) return null;
+			byte[] comment = user_comments[foo];
+
+			for (int i = 0; i < comment_lengths[foo]; i++)
 			{
-				if(comment[i]=='=')
+				if (comment[i] == '=')
 				{
 					char[] comment_uni = AE.GetChars(comment);
-					return new string(comment_uni, i+1, comment_lengths[foo]-(i+1));
+
+					return new string(comment_uni, i + 1, comment_lengths[foo] - (i + 1));
 				}
 			}
+
 			return null;
 		}
 
@@ -155,13 +149,13 @@ namespace csvorbis
 		{
 			int found = 0;
 			int taglen = tag.Length;
-			byte[] fulltag = new byte[taglen+2];
+			byte[] fulltag = new byte[taglen + 2];
 			Array.Copy(tag, 0, fulltag, 0, tag.Length);
-			fulltag[tag.Length]=(byte)'=';
+			fulltag[tag.Length] = (byte) '=';
 
-			for(int i=0;i<comments;i++)
+			for (int i = 0; i < comments; i++)
 			{
-				if(tagcompare(user_comments[i], fulltag, taglen))
+				if (tagcompare(user_comments[i], fulltag, taglen))
 				{
 					if (count == found)
 					{
@@ -175,28 +169,28 @@ namespace csvorbis
 					}
 				}
 			}
+
 			return -1;
 		}
 
 		internal int unpack(csBuffer opb)
 		{
-			int vendorlen=opb.read(32);
-			if(vendorlen < 0)
+			int vendorlen = opb.read(32);
+			if (vendorlen < 0)
 			{
 				//goto err_out;
 				clear();
-				return(-1);
+				return -1;
 			}
 
-			vendor=new byte[vendorlen+1];
-			opb.read(vendor,vendorlen);
+			vendor = new byte[vendorlen + 1];
+			opb.read(vendor, vendorlen);
 
-			comments=opb.read(32);
-			if(comments < 0)
+			comments = opb.read(32);
+			if (comments < 0)
 			{
-				//goto err_out;
 				clear();
-				return(-1);
+				return -1;
 			}
 			user_comments = new byte[comments + 1][];
 			comment_lengths = new int[comments + 1];
@@ -206,47 +200,43 @@ namespace csvorbis
 				int len = opb.read(32);
 				if (len < 0)
 				{
-					//goto err_out;
 					clear();
-					return (-1);
+					return -1;
 				}
 				comment_lengths[i] = len;
 				user_comments[i] = new byte[len + 1];
 				opb.read(user_comments[i], len);
-			}	  
-			if(opb.read(1)!=1)
+			}
+
+			if (opb.read(1) != 1)
 			{
-				//goto err_out; // EOP check
+				// EOP check
 				clear();
-				return(-1);
+				return -1;
 
 			}
-			return(0);
-			//  err_out:
-			//    comment_clear(vc);
-			//    return(-1);
+			return 0;
 		}
 
-		int pack(csBuffer opb)
+		private int pack(csBuffer opb)
 		{
 			const string temp = "Xiphophorus libVorbis I 20000508";
 
 			Encoding AE = Encoding.UTF8;
 			byte[] temp_byt = AE.GetBytes(temp);
 			byte[] _vorbis_byt = AE.GetBytes(_vorbis);
-			
+
 			// preamble
-			opb.write(0x03,8);
+			opb.write(0x03, 8);
 			opb.write(_vorbis_byt);
 
 			// vendor
-			opb.write(temp.Length,32);
+			opb.write(temp.Length, 32);
 			opb.write(temp_byt);
 
 			// comments
-
-			opb.write(comments,32);
-			if(comments != 0)
+			opb.write(comments, 32);
+			if (comments != 0)
 			{
 				for (int i = 0; i < comments; i++)
 				{
@@ -261,16 +251,18 @@ namespace csvorbis
 					}
 				}
 			}
-			opb.write(1,1);
-			return(0);
+
+			opb.write(1, 1);
+
+			return 0;
 		}
 
 		public int header_out(Packet op)
 		{
-			csBuffer opb=new csBuffer();
+			csBuffer opb = new csBuffer();
 			opb.writeinit();
 
-			if(pack(opb) != 0)
+			if (pack(opb) != 0)
 				return OV_EIMPL;
 
 			op.packet_base = new byte[opb.bytes()];
@@ -282,14 +274,14 @@ namespace csvorbis
 			op.granulepos = 0;
 			return 0;
 		}
- 
+
 		internal void clear()
 		{
 			for (int i = 0; i < comments; i++)
 				user_comments[i] = null;
 
-			user_comments=null;
-			vendor=null;
+			user_comments = null;
+			vendor = null;
 		}
 
 		public string getVendor()
@@ -314,9 +306,9 @@ namespace csvorbis
 			Encoding AE = Encoding.UTF8;
 			string long_string = "Vendor: " + new string(AE.GetChars(vendor));
 
-			for(int i=0; i < comments; i++)
+			for (int i = 0; i < comments; i++)
 				long_string = long_string + "\nComment: " + new string(AE.GetChars(user_comments[i]));
-			
+
 			long_string = long_string + "\n";
 
 			return long_string;

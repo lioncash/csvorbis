@@ -318,7 +318,7 @@ namespace csvorbis
 					// is this unused?  If so, we'll
 					// use a decision tree after all
 					// and fall through
-					return (index);
+					return index;
 				}
 			}
 
@@ -351,7 +351,7 @@ namespace csvorbis
 					if (ptr <= 0)
 						break;
 				}
-				return (-ptr);
+				return -ptr;
 			}
 
 			// brute force it!
@@ -359,6 +359,7 @@ namespace csvorbis
 				int besti = -1;
 				float best = 0.0f;
 				int e = 0;
+
 				for (int i = 0; i < entries; i++)
 				{
 					if (c.lengthlist[i] > 0)
@@ -372,7 +373,8 @@ namespace csvorbis
 					}
 					e += dim;
 				}
-				return (besti);
+
+				return besti;
 			}
 		}
 
@@ -576,7 +578,7 @@ namespace csvorbis
 				}
 			}
 
-			t.tabn = ilog(entries) - 4;
+			t.tabn = Util.ilog(entries) - 4;
 
 			if (t.tabn < 5)
 				t.tabn = 5;
@@ -605,20 +607,6 @@ namespace csvorbis
 
 			return t;
 		}
-
-		internal static int ilog(int v)
-		{
-			int ret = 0;
-
-			while (v != 0)
-			{
-				ret++;
-				v = (int) ((uint) v >> 1);
-			}
-
-			return ret;
-		}
-
 	}
 
 	class DecodeAux

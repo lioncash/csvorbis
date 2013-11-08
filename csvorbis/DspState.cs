@@ -22,10 +22,7 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-
 using System;
-using csogg;
-using csvorbis;
 
 namespace csvorbis 
 {
@@ -44,24 +41,24 @@ namespace csvorbis
 		private int pcm_current;
 		private int pcm_returned;
 
-		//float[]  multipliers;
-		//int      envelope_storage;
-		//int      envelope_current;
+		//private float[]  multipliers;
+		//private int      envelope_storage;
+		//private int      envelope_current;
 
-		//int eofflag;
+		//private int eofflag;
 
-		int lW;
-		int W;
-		// int nW;
-		int centerW;
+		private int lW;
+		private int W;
+		// private int nW;
+		private int centerW;
 
-		long granulepos;
+		private long granulepos;
 		public long sequence;
 
-		long glue_bits;
-		long time_bits;
-		long floor_bits;
-		long res_bits;
+		private long glue_bits;
+		private long time_bits;
+		private long floor_bits;
+		private long res_bits;
 
 		// local lookup storage
 		//!!  Envelope ve=new Envelope(); // envelope
@@ -99,59 +96,48 @@ namespace csvorbis
 			wnd[1][1][1]=new float[2][];
 		}
 
-		private static int ilog2(int v)
-		{
-			int ret = 0;
-
-			while (v > 1)
-			{
-				ret++;
-				v = (int) ((uint) v >> 1);
-			}
-
-			return ret;
-		}
-
 		internal static float[] window(int type, int wnd, int left, int right)
 		{
-			float[] ret=new float[wnd];
+			float[] ret = new float[wnd];
+
 			switch(type)
 			{
-				case 0:
-					// The 'vorbis window' (window 0) is sin(sin(x)*sin(x)*2pi)
+				case 0: // The 'vorbis window' (window 0) is sin(sin(x)*sin(x)*2pi)
 				{
-					int leftbegin=wnd/4-left/2;
-					int rightbegin=wnd-wnd/4-right/2;
+					int leftbegin = wnd/4 - left/2;
+					int rightbegin = wnd - wnd/4 - right/2;
 
-					for(int i=0;i<left;i++)
+					for (int i = 0; i < left; i++)
 					{
-						float x=(float)((i+.5)/left*M_PI/2.0);
-						x=(float)Math.Sin(x);
-						x*=x;
-						x*=(float)(M_PI/2.0);
-						x=(float)Math.Sin(x);
-						ret[i+leftbegin]=x;
+						float x = (float) ((i + .5)/left*M_PI/2.0);
+						x = (float) Math.Sin(x);
+						x *= x;
+						x *= (float) (M_PI/2.0);
+						x = (float) Math.Sin(x);
+						ret[i + leftbegin] = x;
 					}
 
-					for(int i=leftbegin+left;i<rightbegin;i++)
+					for(int i = leftbegin+left; i<rightbegin; i++)
 					{
-						ret[i]=1.0f;
+						ret[i] = 1.0f;
 					}
 
-					for(int i=0;i<right;i++)
+					for (int i = 0; i < right; i++)
 					{
-						float x=(float)((right-i-.5)/right*M_PI/2.0);
-						x=(float)Math.Sin(x);
-						x*=x;
-						x*=(float)(M_PI/2.0);
-						x=(float)Math.Sin(x);
-						ret[i+rightbegin]=x;
+						float x = (float) ((right - i - .5)/right*M_PI/2.0);
+						x = (float) Math.Sin(x);
+						x *= x;
+						x *= (float) (M_PI/2.0);
+						x = (float) Math.Sin(x);
+						ret[i + rightbegin] = x;
 					}
 				}
 					break;
+
 				default:
 					return null;
 			}
+
 			return ret;
 		}
 
@@ -162,7 +148,7 @@ namespace csvorbis
 		private int init(Info vi, bool encp)
 		{
 			this.vi = vi;
-			modebits = ilog2(vi.modes);
+			modebits = Util.ilog2(vi.modes);
 
 			transform[0] = new Object[VI_TRANSFORMB];
 			transform[1] = new Object[VI_TRANSFORMB];
@@ -246,14 +232,14 @@ namespace csvorbis
 			return 0;
 		}
 
-		DspState(Info vi) : this()
+		private DspState(Info vi) : this()
 		{
 			init(vi, false);
 			// Adjust centerW to allow an easier mechanism for determining output
-			pcm_returned=centerW;
-			centerW-= vi.blocksizes[W]/4+vi.blocksizes[lW]/4;
-			granulepos=-1;
-			sequence=-1;
+			pcm_returned = centerW;
+			centerW -= vi.blocksizes[W]/4 + vi.blocksizes[lW]/4;
+			granulepos = -1;
+			sequence = -1;
 		}
 
 		// Unlike in analysis, the window is only partially applied for each
@@ -264,85 +250,85 @@ namespace csvorbis
 		{
 			// Shift out any PCM/multipliers that we returned previously
 			// centerW is currently the center of the last block added
-			if(centerW>vi.blocksizes[1]/2 && pcm_returned>8192)
+			if (centerW > vi.blocksizes[1]/2 && pcm_returned > 8192)
 			{
 				// don't shift too much; we need to have a minimum PCM buffer of
 				// 1/2 long block
 
-				int shiftPCM=centerW-vi.blocksizes[1]/2;
-				shiftPCM=(pcm_returned<shiftPCM?pcm_returned:shiftPCM);
+				int shiftPCM = centerW - vi.blocksizes[1]/2;
+				shiftPCM = (pcm_returned < shiftPCM ? pcm_returned : shiftPCM);
 
-				pcm_current-=shiftPCM;
-				centerW-=shiftPCM;
-				pcm_returned-=shiftPCM;
-				if(shiftPCM!=0)
+				pcm_current -= shiftPCM;
+				centerW -= shiftPCM;
+				pcm_returned -= shiftPCM;
+				if (shiftPCM != 0)
 				{
-					for(int i=0;i<vi.channels;i++)
+					for (int i = 0; i < vi.channels; i++)
 					{
 						Array.Copy(pcm[i], shiftPCM, pcm[i], 0, pcm_current);
 					}
 				}
 			}
 
-			lW=W;
-			W=vb.W;
+			lW = W;
+			W  = vb.W;
 
-			glue_bits+=vb.glue_bits;
-			time_bits+=vb.time_bits;
-			floor_bits+=vb.floor_bits;
-			res_bits+=vb.res_bits;
+			glue_bits  += vb.glue_bits;
+			time_bits  += vb.time_bits;
+			floor_bits += vb.floor_bits;
+			res_bits   += vb.res_bits;
 
 			if(sequence+1 != vb.sequence)
-				granulepos=-1; // out of sequence; lose count
+				granulepos = -1; // out of sequence; lose count
 
 			sequence=vb.sequence;
 
-			int sizeW=vi.blocksizes[W];
-			int _centerW=centerW+vi.blocksizes[lW]/4+sizeW/4;
-			int beginW=_centerW-sizeW/2;
-			int endW=beginW+sizeW;
-			int beginSl=0;
-			int endSl=0;
+			int sizeW    = vi.blocksizes[W];
+			int _centerW = centerW + vi.blocksizes[lW]/4 + sizeW/4;
+			int beginW   = _centerW - sizeW/2;
+			int endW     = beginW + sizeW;
+			int beginSl  = 0;
+			int endSl    = 0;
 
 			// Do we have enough PCM/mult storage for the block?
-			if(endW>pcm_storage)
+			if (endW > pcm_storage)
 			{
 				// expand the storage
-				pcm_storage=endW+vi.blocksizes[1];
-				for(int i=0;i<vi.channels;i++)
+				pcm_storage = endW + vi.blocksizes[1];
+				for (int i = 0; i < vi.channels; i++)
 				{
-					float[] foo=new float[pcm_storage];
+					float[] foo = new float[pcm_storage];
 					Array.Copy(pcm[i], 0, foo, 0, pcm[i].Length);
-					pcm[i]=foo;
+					pcm[i] = foo;
 				}
 			}
 
 			// overlap/add PCM
-			switch(W)
+			switch (W)
 			{
 				case 0:
-					beginSl=0;
-					endSl=vi.blocksizes[0]/2;
+					beginSl = 0;
+					endSl = vi.blocksizes[0]/2;
 					break;
 				case 1:
-					beginSl=vi.blocksizes[1]/4-vi.blocksizes[lW]/4;
-					endSl=beginSl+vi.blocksizes[lW]/2;
+					beginSl = vi.blocksizes[1]/4 - vi.blocksizes[lW]/4;
+					endSl = beginSl + vi.blocksizes[lW]/2;
 					break;
 			}
 
-			for(int j=0;j<vi.channels;j++)
+			for (int j = 0; j < vi.channels; j++)
 			{
-				int _pcm=beginW;
+				int _pcm = beginW;
 				// the overlap/add section
-				int i=0;
-				for(i=beginSl;i<endSl;i++)
+				int i = 0;
+				for (i = beginSl; i < endSl; i++)
 				{
-					pcm[j][_pcm+i]+=vb.pcm[j][i];
+					pcm[j][_pcm + i] += vb.pcm[j][i];
 				}
 				// the remaining section
-				for(;i<sizeW;i++)
+				for (; i < sizeW; i++)
 				{
-					pcm[j][_pcm+i]=vb.pcm[j][i];
+					pcm[j][_pcm + i] = vb.pcm[j][i];
 				}
 			}
 
@@ -350,37 +336,35 @@ namespace csvorbis
 			// making sure our last packet doesn't end with added padding.  If
 			// the last packet is partial, the number of samples we'll have to
 			// return will be past the vb->granulepos.
-			//       
+			//
 			// This is not foolproof!  It will be confused if we begin
 			// decoding at the last page after a seek or hole.  In that case,
 			// we don't have a starting point to judge where the last frame
 			// is.  For this reason, vorbisfile will always try to make sure
 			// it reads the last two marked pages in proper sequence
 
-			if(granulepos==-1)
+			if (granulepos == -1)
 			{
-				granulepos=vb.granulepos;
+				granulepos = vb.granulepos;
 			}
 			else
 			{
-				granulepos+=(_centerW-centerW);
-				if(vb.granulepos!=-1 && granulepos!=vb.granulepos)
+				granulepos += (_centerW - centerW);
+				if (vb.granulepos != -1 && granulepos != vb.granulepos)
 				{
-					if(granulepos>vb.granulepos && vb.eofflag!=0)
+					if (granulepos > vb.granulepos && vb.eofflag != 0)
 					{
 						// partial last frame.  Strip the padding off
-						_centerW = _centerW - (int)(granulepos-vb.granulepos);
-					}// else{ Shouldn't happen *unless* the bitstream is out of
+						_centerW = _centerW - (int) (granulepos - vb.granulepos);
+					} // else{ Shouldn't happen *unless* the bitstream is out of
 					// spec.  Either way, believe the bitstream }
-					granulepos=vb.granulepos;
+					granulepos = vb.granulepos;
 				}
 			}
 
 			// Update, cleanup
-
 			centerW=_centerW;
 			pcm_current=endW;
-			//if(vb.eofflag!=0)eofflag=1;
 		
 			return 0;
 		}

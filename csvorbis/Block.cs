@@ -104,7 +104,9 @@ namespace csvorbis
 			{
 				lW = opb.read(1);
 				nW = opb.read(1);
-				if (nW == -1) return (-1);
+
+				if (nW == -1)
+					return -1;
 			}
 			else
 			{

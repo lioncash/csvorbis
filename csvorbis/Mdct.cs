@@ -208,8 +208,9 @@ namespace csvorbis
 					{
 						int w1=wbase;
 						w2=w1-(k0>>1);
-						float AEv= trig[A],wA;
-						float AOv= trig[A+1],wB;
+						float AEv= trig[A];
+						float AOv= trig[A+1];
+						float wA, wB;
 						wbase-=2;
 
 						k0++;

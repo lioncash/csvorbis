@@ -27,7 +27,7 @@ using System;
 
 namespace csvorbis 
 {
-	class Drft
+	internal class Drft
 	{
 		private int n;
 		private float[] trigcache;
@@ -65,103 +65,112 @@ namespace csvorbis
 		private const float taur = -.5f;
 		private const float sqrt2 = 1.4142135623730950488016887242097f;
 
-		static void drfti1(int n, float[] wa, int index, int[] ifac)
+		private static void drfti1(int n, float[] wa, int index, int[] ifac)
 		{
-			float arg,argh,argld,fi;
-			int ntry=0,i,j=-1;
+			float arg, argh, argld, fi;
+			int ntry = 0, i, j = -1;
 			int k1, l1, l2, ib;
 			int ld, ii, ip, iis, nq, nr;
 			int ido, ipm, nfm1;
-			int nl=n;
-			int nf=0;
+			int nl = n;
+			int nf = 0;
 
-
-			L101: j++;
+			L101:
+			j++;
 			if (j < 4)
-				ntry=ntryh[j];
+				ntry = ntryh[j];
 			else
-				ntry+=2;
-							
-			L104: nq=nl/ntry;
-			nr=nl-ntry*nq;
-			if(nr!=0) goto L101;
-			
+				ntry += 2;
+
+			L104:
+			nq = nl/ntry;
+			nr = nl - ntry*nq;
+			if (nr != 0) goto L101;
+
 			nf++;
-			ifac[nf+1]=ntry;
-			nl=nq;
-			if(ntry!=2) goto L107;
-			if(nf==1) goto L107;
-			
-			for(i=1;i<nf;i++)
+			ifac[nf + 1] = ntry;
+			nl = nq;
+			if (ntry != 2) goto L107;
+			if (nf == 1) goto L107;
+
+			for (i = 1; i < nf; i++)
 			{
-				ib=nf-i+1;
-				ifac[ib+1]=ifac[ib];
+				ib = nf - i + 1;
+				ifac[ib + 1] = ifac[ib];
 			}
 			ifac[2] = 2;
-			
-			L107: if(nl!=1) goto L104;
-			ifac[0]=n;
-			ifac[1]=nf;
-			argh=tpi/n;
-			iis=0;
-			nfm1=nf-1;
-			l1=1;
 
-			if(nfm1==0)return;
+			L107:
+			if (nl != 1) goto L104;
+			ifac[0] = n;
+			ifac[1] = nf;
+			argh = tpi/n;
+			iis = 0;
+			nfm1 = nf - 1;
+			l1 = 1;
 
-			for (k1=0;k1<nfm1;k1++)
+			if (nfm1 == 0)
+				return;
+
+			for (k1 = 0; k1 < nfm1; k1++)
 			{
-				ip=ifac[k1+2];
-				ld=0;
-				l2=l1*ip;
-				ido=n/l2;
-				ipm=ip-1;
+				ip = ifac[k1+2];
+				ld = 0;
+				l2 = l1*ip;
+				ido = n/l2;
+				ipm = ip - 1;
 
-				for (j=0;j<ipm;j++)
+				for (j = 0; j < ipm; j++)
 				{
-					ld+=l1;
-					i=iis;
-					argld=(float)ld*argh;
-					fi=0.0f;
-					for (ii=2;ii<ido;ii+=2)
+					ld += l1;
+					i = iis;
+					argld = (float) ld*argh;
+					fi = 0.0f;
+					for (ii = 2; ii < ido; ii += 2)
 					{
-						fi+=1.0f;
-						arg=fi*argld;
-						wa[index+i++]=(float)Math.Cos(arg);
-						wa[index+i++]=(float)Math.Sin(arg);
+						fi += 1.0f;
+						arg = fi*argld;
+						wa[index + i++] = (float) Math.Cos(arg);
+						wa[index + i++] = (float) Math.Sin(arg);
 					}
-					iis+=ido;
+
+					iis += ido;
 				}
-				l1=l2;
+
+				l1 = l2;
 			}
 		}
 
 		static void fdrffti(int n, float[] wsave, int[] ifac)
 		{
-			if(n == 1) return;
+			if (n == 1)
+				return;
+
 			drfti1(n, wsave, n, ifac);
 		}
 
 		static void dradf2(int ido,int l1,float[] cc, float[] ch, float[] wa1, int index)
 		{
-			int i,k;
-			float ti2,tr2;
-			int t0,t1,t2,t3,t4,t5,t6;
+			int i, k;
+			float ti2, tr2;
+			int t0, t1, t2, t3, t4, t5, t6;
 
-			t1=0;
-			t0=(t2=l1*ido);
-			t3=ido<<1;
-			for(k=0;k<l1;k++)
+			t1 = 0;
+			t0 = (t2 = l1*ido);
+			t3 = ido << 1;
+			for (k = 0; k < l1; k++)
 			{
-				ch[t1<<1]=cc[t1]+cc[t2];
-				ch[(t1<<1)+t3-1]=cc[t1]-cc[t2];
-				t1+=ido;
-				t2+=ido;
+				ch[t1 << 1] = cc[t1] + cc[t2];
+				ch[(t1 << 1) + t3 - 1] = cc[t1] - cc[t2];
+				t1 += ido;
+				t2 += ido;
 			}
-    
-			if(ido<2) return;
 
-			if(ido==2) goto L105;
+			if (ido < 2)
+				return;
+
+			if (ido == 2)
+				goto L105;
 			
 			t1=0;
 			t2=t0;
@@ -187,8 +196,10 @@ namespace csvorbis
 				t1+=ido;
 				t2+=ido;
 			}
-			if(ido%2==1)return;
-    
+
+			if (ido%2 == 1)
+				return;
+
 			L105: t3=(t2=(t1=ido)-1);
 			t2+=t0;
 			for(k=0;k<l1;k++)
@@ -206,8 +217,8 @@ namespace csvorbis
 			float[] wa2, int index2,
 			float[] wa3, int index3)
 		{
-			int i,k,t0,t1,t2,t3,t4,t5,t6;
-			float ci2,ci3,ci4,cr2,cr3,cr4,ti1,ti2,ti3,ti4,tr1,tr2,tr3,tr4;
+			int i, k, t0, t1, t2, t3, t4, t5, t6;
+			float ci2, ci3, ci4, cr2, cr3, cr4, ti1, ti2, ti3, ti4, tr1, tr2, tr3, tr4;
 			t0=l1*ido;
   
 			t1=t0;
