@@ -22,8 +22,6 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-
-using System;
 using System.Runtime.CompilerServices;
 using csogg;
 
@@ -36,14 +34,14 @@ namespace csvorbis
 		internal StaticCodeBook c=new StaticCodeBook();
 
 		internal float[] valuelist; // list of dim*entries actual entry values
-		internal int[] codelist;     // list of bitstream codewords for each entry
+		internal int[] codelist = null;     // list of bitstream codewords for each entry
 		internal DecodeAux decode_tree;
 
 		// returns the number of bits
 		internal int encode(int a, csBuffer b)
 		{
 			b.write(codelist[a], c.lengthlist[a]);
-			return(c.lengthlist[a]);
+			return c.lengthlist[a];
 		}
 
 		// One the encode side, our vector writers are each designed for a
@@ -63,140 +61,148 @@ namespace csvorbis
 		// returns entry number and *modifies a* to the quantization value
 		internal int errorv(float[] a)
 		{
-			int bestt=best(a,1);
-			for(int k=0;k<dim;k++)
+			int bestt = best(a, 1);
+
+			for (int k = 0; k < dim; k++)
 			{
-				a[k]=valuelist[bestt*dim+k];
+				a[k] = valuelist[bestt*dim + k];
 			}
-			return(bestt);
+
+			return bestt;
 		}
 
 		// returns the number of bits and *modifies a* to the quantization value
 		internal int encodev(int best, float[] a, csBuffer b)
 		{
-			for(int k=0;k<dim;k++)
+			for (int k = 0; k < dim; k++)
 			{
-				a[k]=valuelist[best*dim+k];
+				a[k] = valuelist[best*dim + k];
 			}
-			return(encode(best,b));
+
+			return encode(best, b);
 		}
 
 		// res0 (multistage, interleave, lattice)
 		// returns the number of bits and *modifies a* to the remainder value
-		internal int encodevs(float[] a, csBuffer b, int step,int addmul)
+		internal int encodevs(float[] a, csBuffer b, int step, int addmul)
 		{
-			int best=besterror(a,step,addmul);
-			return(encode(best,b));
+			int best = besterror(a, step, addmul);
+
+			return encode(best, b);
 		}
 
 		internal int[] t=new int[15];  // decodevs_add is synchronized for re-using t.
-	
+
 		[MethodImpl(MethodImplOptions.Synchronized)]
-		internal int decodevs_add(float[]a, int offset, csBuffer b, int n)
+		internal int decodevs_add(float[] a, int offset, csBuffer b, int n)
 		{
-			int step=n/dim;
-			int entry;
-			int i,j,o;
+			int step = n/dim;
+			int i, j, o;
 
-			if(t.Length<step)
+			if (t.Length < step)
 			{
-				t=new int[step];
+				t = new int[step];
 			}
 
-			for(i = 0; i < step; i++)
+			for (i = 0; i < step; i++)
 			{
-				entry=decode(b);
-				if(entry==-1)return(-1);
-				t[i]=entry*dim;
+				int entry = decode(b);
+				if (entry == -1)
+					return -1;
+
+				t[i] = entry*dim;
 			}
-			for(i=0,o=0;i<dim;i++,o+=step)
+
+			for (i = 0, o = 0; i < dim; i++,o += step)
 			{
-				for(j=0;j<step;j++)
+				for (j = 0; j < step; j++)
 				{
-					a[offset+o+j]+=valuelist[t[j]+i];
+					a[offset + o + j] += valuelist[t[j] + i];
 				}
 			}
 
-			return(0);
+			return 0;
 		}
 
-		internal int decodev_add(float[]a, int offset, csBuffer b,int n)
+		internal int decodev_add(float[] a, int offset, csBuffer b, int n)
 		{
-			int i,j,k,entry;
-			int t;
-
-			if(dim>8)
+			if (dim > 8)
 			{
-				for(i=0;i<n;)
+				for (int i = 0; i < n;)
 				{
-					entry = decode(b);
-					if(entry==-1)return(-1);
-					t=entry*dim;
-					for(j=0;j<dim;)
+					int entry = decode(b);
+					if (entry == -1)
+						return -1;
+
+					int t = entry*dim;
+					for (int j = 0; j < dim;)
 					{
-						a[offset+(i++)]+=valuelist[t+(j++)];
+						a[offset + (i++)] += valuelist[t + (j++)];
 					}
 				}
 			}
 			else
 			{
-				for(i=0;i<n;)
+				for (int i = 0; i < n;)
 				{
-					entry=decode(b);
-					if(entry==-1)return(-1);
-					t=entry*dim;
-					j=0;
-					for(k=0; k < dim; k++)
+					int entry = decode(b);
+					if (entry == -1)
+						return -1;
+
+					int t = entry*dim;
+					int j = 0;
+					for (int k = 0; k < dim; k++)
 					{
-						a[offset+(i++)]+=valuelist[t+(j++)];
+						a[offset + (i++)] += valuelist[t + (j++)];
 					}
 				}
-			}    
-			return(0);
-		}
-
-		internal int decodev_set(float[] a,int offset, csBuffer b, int n)
-		{
-			int i,j,entry;
-			int t;
-
-			for(i=0;i<n;)
-			{
-				entry = decode(b);
-				if(entry==-1)return(-1);
-				t=entry*dim;
-				for(j=0;j<dim;)
-				{
-					a[offset+i++]=valuelist[t+(j++)];
-				}
 			}
-			return(0);
+
+			return 0;
 		}
 
-		internal int decodevv_add(float[][] a, int offset,int ch, csBuffer b,int n)
+		internal int decodev_set(float[] a, int offset, csBuffer b, int n)
 		{
-			int i,j,entry;
-			int chptr=0;
-			//System.out.println("decodevv_add: a="+a+",b="+b+",valuelist="+valuelist);
-
-			for(i=offset/ch;i<(offset+n)/ch;)
+			for (int i = 0; i < n;)
 			{
-				entry = decode(b);
-				if(entry==-1)return(-1);
+				int entry = decode(b);
+				if (entry == -1)
+					return -1;
 
 				int t = entry*dim;
-				for(j=0;j<dim;j++)
+				for (int j = 0; j < dim;)
 				{
-					a[chptr][i]+=valuelist[t+j];
+					a[offset + i++] = valuelist[t + (j++)];
+				}
+			}
+
+			return 0;
+		}
+
+		internal int decodevv_add(float[][] a, int offset, int ch, csBuffer b, int n)
+		{
+			int chptr = 0;
+
+			for (int i = offset/ch; i < (offset + n)/ch;)
+			{
+				int entry = decode(b);
+				if (entry == -1) 
+					return -1;
+
+				int t = entry*dim;
+				for (int j = 0; j < dim; j++)
+				{
+					a[chptr][i] += valuelist[t + j];
 					chptr++;
-					if(chptr==ch)
+					if (chptr == ch)
 					{
-						chptr=0;
+						chptr = 0;
 						i++;
 					}
 				}
 			}
-			return(0);
+
+			return 0;
 		}
 
 
@@ -217,233 +223,223 @@ namespace csvorbis
 		// returns the entry number or -1 on eof
 		internal int decode(csBuffer b)
 		{
-			int ptr=0;
-			DecodeAux t=decode_tree;
-			int lok=b.look(t.tabn);
+			int ptr = 0;
+			DecodeAux t = decode_tree;
+			int lok = b.look(t.tabn);
 			//System.err.println(this+" "+t+" lok="+lok+", tabn="+t.tabn);
 
-			if(lok>=0)
+			if (lok >= 0)
 			{
-				ptr=t.tab[lok];
+				ptr = t.tab[lok];
 				b.adv(t.tabl[lok]);
-				if(ptr<=0)
+				if (ptr <= 0)
 				{
 					return -ptr;
 				}
 			}
 			do
 			{
-				switch(b.read1())
+				switch (b.read1())
 				{
 					case 0:
-						ptr=t.ptr0[ptr];
+						ptr = t.ptr0[ptr];
 						break;
 					case 1:
-						ptr=t.ptr1[ptr];
+						ptr = t.ptr1[ptr];
 						break;
 					case -1:
 					default:
-						return(-1);
+						return -1;
 				}
-			}
-			while(ptr>0);
-			return(-ptr);
+			} while (ptr > 0);
+
+			return -ptr;
 		}
 
 		// returns the entry number or -1 on eof
-		internal int decodevs(float[] a, int index, csBuffer b, int step,int addmul)
+		internal int decodevs(float[] a, int index, csBuffer b, int step, int addmul)
 		{
-			int entry=decode(b);
-			if(entry==-1)return(-1);
-			switch(addmul)
+			int entry = decode(b);
+			if (entry == -1)
+				return -1;
+
+			switch (addmul)
 			{
 				case -1:
-					for(int i=0,o=0;i<dim;i++,o+=step)
-						a[index+o]=valuelist[entry*dim+i];
+					for (int i = 0, o = 0; i < dim; i++,o += step)
+						a[index + o] = valuelist[entry*dim + i];
 					break;
+
 				case 0:
-					for(int i=0,o=0;i<dim;i++,o+=step)
-						a[index+o]+=valuelist[entry*dim+i];
+					for (int i = 0, o = 0; i < dim; i++,o += step)
+						a[index + o] += valuelist[entry*dim + i];
 					break;
+
 				case 1:
-					for(int i=0,o=0;i<dim;i++,o+=step)
-						a[index+o]*=valuelist[entry*dim+i];
-					break;
-				default:
-				//nothing
+					for (int i = 0, o = 0; i < dim; i++,o += step)
+						a[index + o] *= valuelist[entry*dim + i];
 					break;
 			}
-			return(entry);
+
+			return entry;
 		}
 
 		internal int best(float[] a, int step)
 		{
-			EncodeAuxNearestMatch nt=c.nearest_tree;
-			EncodeAuxThreshMatch tt=c.thresh_tree;
-			int ptr=0;
+			EncodeAuxNearestMatch nt = c.nearest_tree;
+			EncodeAuxThreshMatch tt = c.thresh_tree;
+			int ptr = 0;
 
 			// we assume for now that a thresh tree is the only other possibility
-			if(tt!=null)
+			if (tt != null)
 			{
-				int index=0;
+				int index = 0;
+
 				// find the quant val of each scalar
-				for(int k=0,o=step*(dim-1);k<dim;k++,o-=step)
+				for (int k = 0, o = step*(dim - 1); k < dim; k++,o -= step)
 				{
 					int i;
 					// linear search the quant list for now; it's small and although
 					// with > 8 entries, it would be faster to bisect, this would be
 					// a misplaced optimization for now
-					for(i=0;i<tt.threshvals-1;i++)
+					for (i = 0; i < tt.threshvals - 1; i++)
 					{
-						if(a[o]<tt.quantthresh[i])
+						if (a[o] < tt.quantthresh[i])
 						{
 							break;
 						}
 					}
-					index=(index*tt.quantvals)+tt.quantmap[i];
+					index = (index*tt.quantvals) + tt.quantmap[i];
 				}
+
 				// regular lattices are easy :-)
-				if(c.lengthlist[index]>0)
+				if (c.lengthlist[index] > 0)
 				{
 					// is this unused?  If so, we'll
 					// use a decision tree after all
 					// and fall through
-					return(index);
+					return (index);
 				}
 			}
-			if(nt!=null)
+
+			if (nt != null)
 			{
 				// optimized using the decision tree
-				while(true)
+				while (true)
 				{
-					double cc=0.0;
-					int p=nt.p[ptr];
-					int q=nt.q[ptr];
-					for(int k=0,o=0;k<dim;k++,o+=step)
+					double cc = 0.0;
+					int p = nt.p[ptr];
+					int q = nt.q[ptr];
+
+					for (int k = 0, o = 0; k < dim; k++,o += step)
 					{
-						cc+=(valuelist[p+k]-valuelist[q+k])*
-							(a[o]-(valuelist[p+k]+valuelist[q+k])*.5);
+						cc += (valuelist[p + k] - valuelist[q + k])*
+						      (a[o] - (valuelist[p + k] + valuelist[q + k])*.5);
 					}
-					if(cc>0.0)
-					{ // in A
-						ptr= -nt.ptr0[ptr];
+
+					if (cc > 0.0)
+					{
+						// in A
+						ptr = -nt.ptr0[ptr];
 					}
 					else
-					{     // in B
-						ptr= -nt.ptr1[ptr];
+					{
+						// in B
+						ptr = -nt.ptr1[ptr];
 					}
-					if(ptr<=0)break;
+
+					if (ptr <= 0)
+						break;
 				}
-				return(-ptr);
+				return (-ptr);
 			}
 
 			// brute force it!
-		{
-			int besti=-1;
-			float best=0.0f;
-			int e=0;
-			for(int i=0;i<entries;i++)
 			{
-				if(c.lengthlist[i]>0)
+				int besti = -1;
+				float best = 0.0f;
+				int e = 0;
+				for (int i = 0; i < entries; i++)
 				{
-					float _this=dist(dim, valuelist, e, a, step);
-					if(besti==-1 || _this<best)
+					if (c.lengthlist[i] > 0)
 					{
-						best=_this;
-						besti=i;
+						float _this = dist(dim, valuelist, e, a, step);
+						if (besti == -1 || _this < best)
+						{
+							best = _this;
+							besti = i;
+						}
 					}
+					e += dim;
 				}
-				e+=dim;
+				return (besti);
 			}
-			return(besti);
-		}
 		}
 
 		// returns the entry number and *modifies a* to the remainder value
 		internal int besterror(float[] a, int step, int addmul)
 		{
-			int bestt=best(a,step);
-			switch(addmul)
+			int bestt = best(a, step);
+
+			switch (addmul)
 			{
 				case 0:
-					for(int i=0,o=0;i<dim;i++,o+=step)
-						a[o]-=valuelist[bestt*dim+i];
+					for (int i = 0, o = 0; i < dim; i++,o += step)
+						a[o] -= valuelist[bestt*dim + i];
 					break;
+
 				case 1:
-					for(int i=0,o=0;i<dim;i++,o+=step)
+					for (int i = 0, o = 0; i < dim; i++,o += step)
 					{
-						float val=valuelist[bestt*dim+i];
-						if(val==0)
+						float val = valuelist[bestt*dim + i];
+						if (val == 0f)
 						{
-							a[o]=0;
+							a[o] = 0;
 						}
 						else
 						{
-							a[o]/=val;
+							a[o] /= val;
 						}
 					}
 					break;
 			}
-			return(bestt);
+
+			return bestt;
 		}
 
 		internal void clear()
 		{
-			// static book is not cleared; we're likely called on the lookup and
-			// the static codebook belongs to the info struct
-			//if(decode_tree!=null){
-			//  free(b->decode_tree->ptr0);
-			//  free(b->decode_tree->ptr1);
-			//  memset(b->decode_tree,0,sizeof(decode_aux));
-			//  free(b->decode_tree);
-			//}
-			//if(valuelist!=null)free(b->valuelist);
-			//if(codelist!=null)free(b->codelist);
-			//memset(b,0,sizeof(codebook));
+			// Do nothing?
 		}
 
 		internal static float dist(int el, float[] rref, int index, float[] b, int step)
 		{
-			float acc=(float)0.0;
-			for(int i=0; i<el; i++)
-			{
-				float val=(rref[index+i]-b[i*step]);
-				acc+=val*val;
-			}
-			return(acc);
-		}
+			float acc = (float) 0.0;
 
-		/*
-		  int init_encode(StaticCodeBook s){
-			//memset(c,0,sizeof(codebook));
-			c=s;
-			entries=s.entries;
-			dim=s.dim;
-			codelist=make_words(s.lengthlist, s.entries);
-			valuelist=s.unquantize();
-			return(0);
-		  }
-		*/
+			for (int i = 0; i < el; i++)
+			{
+				float val = (rref[index + i] - b[i*step]);
+				acc += val*val;
+			}
+
+			return acc;
+		}
 
 		internal int init_decode(StaticCodeBook s)
 		{
-			//memset(c,0,sizeof(codebook));
-			c=s;
-			entries=s.entries;
-			dim=s.dim;
-			valuelist=s.unquantize();
+			c = s;
+			entries = s.entries;
+			dim = s.dim;
+			valuelist = s.unquantize();
 
-			decode_tree=make_decode_tree();
-			if(decode_tree==null)
+			decode_tree = make_decode_tree();
+			if (decode_tree == null)
 			{
-				//goto err_out;
 				clear();
-				return(-1);
+				return -1;
 			}
-			return(0);
-			//  err_out:
-			//    vorbis_book_clear(c);
-			//    return(-1);
+
+			return 0;
 		}
 
 		// given a list of word lengths, generate a list of codewords.  Works
@@ -451,141 +447,150 @@ namespace csvorbis
 		// codewords first.  Extended to handle unused entries (length 0)
 		internal static int[] make_words(int[] l, int n)
 		{
-			int[] marker=new int[33];
-			int[] r=new int[n];
-			//memset(marker,0,sizeof(marker));
+			int[] marker = new int[33];
+			int[] r = new int[n];
 
-			for(int i=0;i<n;i++)
+			for (int i = 0; i < n; i++)
 			{
-				int length=l[i];
-				if(length>0)
+				int length = l[i];
+				if (length > 0)
 				{
-					int entry=marker[length];
-      
+					int entry = marker[length];
+
 					// when we claim a node for an entry, we also claim the nodes
 					// below it (pruning off the imagined tree that may have dangled
 					// from it) as well as blocking the use of any nodes directly
 					// above for leaves
-      
+
 					// update ourself
-					if(length<32 && ((uint)entry>>length)!=0)
+					if (length < 32 && ((uint) entry >> length) != 0)
 					{
 						// error condition; the lengths must specify an overpopulated tree
-						//free(r);
-						return(null);
+						return null;
 					}
-					r[i]=entry;
-    
+					r[i] = entry;
+
 					// Look to see if the next shorter marker points to the node
 					// above. if so, update it and repeat.
-				{
-					for(int j=length;j>0;j--)
 					{
-						if((marker[j]&1)!=0)
+						for (int j = length; j > 0; j--)
 						{
-							// have to jump branches
-							if(j==1)marker[1]++;
-							else marker[j]=marker[j-1]<<1;
-							break; // invariant says next upper marker would already
-							// have been moved if it was on the same path
+							if ((marker[j] & 1) != 0)
+							{
+								// have to jump branches
+								if (j == 1)
+									marker[1]++;
+								else
+									marker[j] = marker[j - 1] << 1;
+
+								break; // invariant says next upper marker would already
+								// have been moved if it was on the same path
+							}
+							marker[j]++;
 						}
-						marker[j]++;
 					}
-				}
-      
+
 					// prune the tree; the implicit invariant says all the longer
 					// markers were dangling from our just-taken node.  Dangle them
 					// from our *new* node.
-					for(int j=length+1;j<33;j++)
+					for (int j = length + 1; j < 33; j++)
 					{
-						if(((uint)marker[j]>>1) == entry)
+						if (((uint) marker[j] >> 1) == entry)
 						{
-							entry=marker[j];
-							marker[j]=marker[j-1]<<1;
+							entry = marker[j];
+							marker[j] = marker[j - 1] << 1;
 						}
 						else
 						{
 							break;
 						}
-					}    
+					}
 				}
 			}
 
-			// bitreverse the words because our bitwise packer/unpacker is LSb
-			// endian
-			for(int i=0;i<n;i++)
+			// bitreverse the words because our bitwise packer/unpacker is LSb endian
+			for (int i = 0; i < n; i++)
 			{
-				int temp=0;
-				for(int j=0;j<l[i];j++)
+				int temp = 0;
+				for (int j = 0; j < l[i]; j++)
 				{
-					temp<<=1;
-					temp = (int)((uint)temp | ((uint)r[i]>>j)&1);
+					temp <<= 1;
+					temp = (int) ((uint) temp | ((uint) r[i] >> j) & 1);
 				}
-				r[i]=temp;
+				r[i] = temp;
 			}
 
-			return(r);
+			return r;
 		}
 
 		// build the decode helper tree from the codewords 
 		internal DecodeAux make_decode_tree()
 		{
-			int top=0;
-			DecodeAux t=new DecodeAux();
-			int[] ptr0=t.ptr0=new int[entries*2];
-			int[] ptr1=t.ptr1=new int[entries*2];
-			int[] codelist=make_words(c.lengthlist, c.entries);
+			int top = 0;
+			DecodeAux t = new DecodeAux();
+			int[] ptr0 = t.ptr0 = new int[entries*2];
+			int[] ptr1 = t.ptr1 = new int[entries*2];
+			int[] codelist = make_words(c.lengthlist, c.entries);
 
-			if(codelist==null)return(null);
-			t.aux=entries*2;
+			if (codelist == null)
+				return null;
 
-			for(int i=0;i<entries;i++)
+			t.aux = entries*2;
+
+			for (int i = 0; i < entries; i++)
 			{
-				if(c.lengthlist[i]>0)
+				if (c.lengthlist[i] > 0)
 				{
-					int ptr=0;
+					int ptr = 0;
 					int j;
-					for(j=0;j<c.lengthlist[i]-1;j++)
+					for (j = 0; j < c.lengthlist[i] - 1; j++)
 					{
-						int bit=(int)(((uint)codelist[i]>>j)&1);
-						if(bit==0)
+						int bit = (int) (((uint) codelist[i] >> j) & 1);
+						if (bit == 0)
 						{
-							if(ptr0[ptr]==0)
+							if (ptr0[ptr] == 0)
 							{
-								ptr0[ptr]=++top;
+								ptr0[ptr] = ++top;
 							}
-							ptr=ptr0[ptr];
+							ptr = ptr0[ptr];
 						}
 						else
 						{
-							if(ptr1[ptr]==0)
+							if (ptr1[ptr] == 0)
 							{
-								ptr1[ptr]= ++top;
+								ptr1[ptr] = ++top;
 							}
-							ptr=ptr1[ptr];
+							ptr = ptr1[ptr];
 						}
 					}
 
-					if((((uint)codelist[i]>>j)&1)==0){ ptr0[ptr]=-i; }
-					else{ ptr1[ptr]=-i; }
+					if ((((uint) codelist[i] >> j) & 1) == 0)
+					{
+						ptr0[ptr] = -i;
+					}
+					else
+					{
+						ptr1[ptr] = -i;
+					}
 
 				}
 			}
-			//free(codelist);
 
-			t.tabn = ilog(entries)-4;
+			t.tabn = ilog(entries) - 4;
 
-			if(t.tabn<5)t.tabn=5;
-			int n = 1<<t.tabn;
+			if (t.tabn < 5)
+				t.tabn = 5;
+
+			int n = 1 << t.tabn;
 			t.tab = new int[n];
 			t.tabl = new int[n];
-			for(int i = 0; i < n; i++)
+			for (int i = 0; i < n; i++)
 			{
 				int p = 0;
-				int j=0;
-				for(j = 0; j < t.tabn && (p > 0 || j == 0); j++)
+				int j = 0;
+				for (j = 0; j < t.tabn && (p > 0 || j == 0); j++)
 				{
-					if ((i&(1<<j))!=0)
+					if ((i & (1 << j)) != 0)
 					{
 						p = ptr1[p];
 					}
@@ -594,22 +599,24 @@ namespace csvorbis
 						p = ptr0[p];
 					}
 				}
-				t.tab[i]=p;  // -code
-				t.tabl[i]=j; // length 
+				t.tab[i] = p; // -code
+				t.tabl[i] = j; // length 
 			}
 
-			return(t);
+			return t;
 		}
 
 		internal static int ilog(int v)
 		{
-			int ret=0;
-			while(v!=0)
+			int ret = 0;
+
+			while (v != 0)
 			{
 				ret++;
-				v = (int)((uint)v >> 1);
+				v = (int) ((uint) v >> 1);
 			}
-			return(ret);
+
+			return ret;
 		}
 
 	}

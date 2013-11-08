@@ -29,13 +29,15 @@ namespace csvorbis
 {
 	class Drft
 	{
-		int n;
-		float[] trigcache;    
-		int[] splitcache;
+		private int n;
+		private float[] trigcache;
+		private int[] splitcache;
 
 		internal void backward(float[] data)
 		{
-			if(n==1)return;
+			if(n == 1)
+				return;
+
 			drftb1(n,data,trigcache,trigcache,n,splitcache);
 		}
 
@@ -49,16 +51,19 @@ namespace csvorbis
 
 		internal void clear()
 		{
-			if(trigcache!=null)trigcache=null;
-			if(splitcache!=null)splitcache=null;
+			if (trigcache != null)
+				trigcache  = null;
+
+			if (splitcache != null)
+				splitcache = null;
 		}
 
-		static int[] ntryh = { 4,2,3,5 };
-		static float tpi = 6.28318530717958647692528676655900577f;
-		static float hsqt2 = .70710678118654752440084436210485f;
-		static float taui = .86602540378443864676372317075293618f;
-		static float taur = -.5f;
-		static float sqrt2 = 1.4142135623730950488016887242097f;
+		private static readonly int[] ntryh = {4, 2, 3, 5};
+		private const float tpi = 6.28318530717958647692528676655900577f;
+		private const float hsqt2 = .70710678118654752440084436210485f;
+		private const float taui = .86602540378443864676372317075293618f;
+		private const float taur = -.5f;
+		private const float sqrt2 = 1.4142135623730950488016887242097f;
 
 		static void drfti1(int n, float[] wa, int index, int[] ifac)
 		{
@@ -1133,7 +1138,7 @@ namespace csvorbis
 
 			if(ido==1) goto L132;
 			if(nbd<l1) goto L128;
-										
+
 			t1=0;
 			t2=ipp2*t0;
 			for(j=1;j<ipph;j++)
@@ -1275,39 +1280,58 @@ namespace csvorbis
 				else
 					dradb4(ido,l1,c,ch,wa,index+iw-1,wa,index+ix2-1,wa,index+ix3-1);
 				na=1-na;
-				goto L115;							
-			L103: if(ip!=2) goto L106;
-											
-				if(na!=0)
-					dradb2(ido,l1,ch,c,wa,index+iw-1);
-				else
-					dradb2(ido,l1,c,ch,wa,index+iw-1);
-				na=1-na;
 				goto L115;
 
-			L106: if(ip!=3) goto L109;
-											
-				ix2=iw+ido;
-				if(na!=0)
-					dradb3(ido,l1,ch,c,wa,index+iw-1,wa,index+ix2-1);
-				else
-					dradb3(ido,l1,c,ch,wa,index+iw-1,wa,index+ix2-1);
-				na=1-na;
-				goto L115;
-										
-			L109: if(na!=0)
-					  dradbg(ido,ip,l1,idl1,ch,ch,ch,c,c,wa,index+iw-1);
-				  else
-					  dradbg(ido,ip,l1,idl1,c,c,c,ch,ch,wa,index+iw-1);
-				if(ido==1)na=1-na;
-				l1=l2;
-				iw+=(ip-1)*ido;
+				L103:
+				{
+					if (ip != 2)
+						goto L106;
 
-			L115: l1=l2;
-				iw+=(ip-1)*ido;
+					if (na != 0)
+						dradb2(ido, l1, ch, c, wa, index + iw - 1);
+					else
+						dradb2(ido, l1, c, ch, wa, index + iw - 1);
+					na = 1 - na;
+					goto L115;
+				}
+
+				L106:
+				{
+					if(ip!=3)
+						goto L109;
+
+					ix2 = iw + ido;
+					if (na != 0)
+						dradb3(ido, l1, ch, c, wa, index + iw - 1, wa, index + ix2 - 1);
+					else
+						dradb3(ido, l1, c, ch, wa, index + iw - 1, wa, index + ix2 - 1);
+					na = 1 - na;
+					goto L115;
+				}
+
+				L109:
+				{
+					if (na != 0)
+						dradbg(ido, ip, l1, idl1, ch, ch, ch, c, c, wa, index + iw - 1);
+					else
+						dradbg(ido, ip, l1, idl1, c, c, c, ch, ch, wa, index + iw - 1);
+					if (ido == 1) na = 1 - na;
+					l1 = l2;
+					iw += (ip - 1)*ido;
+				}
+
+				L115:
+				{
+					l1 = l2;
+					iw += (ip - 1)*ido;
+				}
 			}
-			if(na==0)return;
-			for(i=0;i<n;i++)c[i]=ch[i];
+
+			if (na == 0)
+				return;
+
+			for (i = 0; i < n; i++)
+				c[i] = ch[i];
 		}
 	}
 }

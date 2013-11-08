@@ -32,13 +32,13 @@ namespace csogg
 	public class SyncState
 	{
 		public byte[] data;
-		int storage;
-		int fill;
-		int returned;
+		private int storage;
+		private int fill;
+		private int returned;
 
-		int unsynced;
-		int headerbytes;
-		int bodybytes;
+		private int unsynced;
+		private int headerbytes;
+		private int bodybytes;
 
 		public int clear()
 		{

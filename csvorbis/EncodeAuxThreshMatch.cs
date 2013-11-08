@@ -22,16 +22,13 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-
-using System;
-
 namespace csvorbis 
 {
-	class EncodeAuxThreshMatch
+	internal class EncodeAuxThreshMatch
 	{
-		internal float[] quantthresh;
-		internal int[]   quantmap;
-		internal int     quantvals; 
-		internal int     threshvals; 
+		internal float[] quantthresh = null;
+		internal int[]   quantmap = null;
+		internal int     quantvals = 0; 
+		internal int     threshvals = 0; 
 	}
 }

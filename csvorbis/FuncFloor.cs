@@ -28,9 +28,9 @@ using csogg;
 
 namespace csvorbis 
 {
-	abstract class FuncFloor
+	internal abstract class FuncFloor
 	{
-		public static FuncFloor[] floor_P={new Floor0(),new Floor1()};
+		public static FuncFloor[] floor_P = {new Floor0(), new Floor1()};
 
 		public abstract void pack(Object i, csBuffer opb);
 		public abstract Object unpack(Info vi, csBuffer opb);

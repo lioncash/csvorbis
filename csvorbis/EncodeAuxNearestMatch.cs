@@ -22,19 +22,16 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-
-using System;
-
 namespace csvorbis 
 {
-	class EncodeAuxNearestMatch
+	internal class EncodeAuxNearestMatch
 	{
-		internal int[] ptr0;
-		internal int[] ptr1;
+		internal int[] ptr0 = null;
+		internal int[] ptr1 = null;
 
-		internal int[] p;         // decision points (each is an entry)
-		internal int[] q;         // decision points (each is an entry)
-		internal int   aux;       // number of tree entries
-		internal int   alloc;       
+		internal int[] p = null; // decision points (each is an entry)
+		internal int[] q = null; // decision points (each is an entry)
+		internal int   aux = 0;  // number of tree entries
+		internal int alloc = 0;
 	}
 }

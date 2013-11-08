@@ -28,12 +28,12 @@ using csogg;
 
 namespace csvorbis 
 {
-	abstract class FuncTime
+	internal abstract class FuncTime
 	{
-		public static FuncTime[] time_P={new Time0()};
+		public static FuncTime[] time_P = {new Time0()};
 
 		public abstract void pack(Object i, csBuffer opb);
-		public abstract Object unpack(Info vi , csBuffer opb);
+		public abstract Object unpack(Info vi, csBuffer opb);
 		public abstract Object look(DspState vd, InfoMode vm, Object i);
 		public abstract void free_info(Object i);
 		public abstract void free_look(Object i);

@@ -24,25 +24,24 @@
 
 
 using System;
-using csogg;
 
 namespace csvorbis 
 {
-	class Residue2 : Residue0
+	internal class Residue2 : Residue0
 	{
-		override public int forward(Block vb,Object vl, float[][] fin, int ch)
+		public override int inverse(Block vb, Object vl, float[][] fin, int[] nonzero, int ch)
 		{
-			return 0;
-		}
+			int i;
+			for (i = 0; i < ch; i++)
+			{
+				if (nonzero[i] != 0)
+					break;
+			}
 
-		override public int inverse(Block vb, Object vl, float[][] fin, int[] nonzero, int ch)
-		{
-			//System.err.println("Residue0.inverse");
-			int i=0;
-			for(i=0;i<ch;i++)if(nonzero[i]!=0)break;
-			if(i==ch)return(0); /* no nonzero vectors */
+			if (i == ch)
+				return 0; /* no nonzero vectors */
 
-			return(_2inverse(vb, vl, fin, ch));
+			return (_2inverse(vb, vl, fin, ch));
 		}
 	}
 }

@@ -28,7 +28,7 @@ using csogg;
 
 namespace csvorbis 
 {
-	class StaticCodeBook
+	internal class StaticCodeBook
 	{
 		internal int   dim;            // codebook dimensions (elements per vector)
 		internal int   entries;        // codebook entries
@@ -56,103 +56,89 @@ namespace csvorbis
 		// map == 2: list of dim*entries quantized entry vals
 
 		// encode helpers
-		internal EncodeAuxNearestMatch nearest_tree;
-		internal EncodeAuxThreshMatch  thresh_tree;
-
-		internal StaticCodeBook(){}
-		internal StaticCodeBook(int dim, int entries, int[] lengthlist,
-			int maptype, int q_min, int q_delta, 
-			int q_quant, int q_sequencep, int[] quantlist,
-			//EncodeAuxNearestmatch nearest_tree,
-			Object nearest_tree,
-			// EncodeAuxThreshmatch thresh_tree,
-			Object thresh_tree
-			) : this()
-		{
-			this.dim=dim; this.entries=entries; this.lengthlist=lengthlist;
-			this.maptype=maptype; this.q_min=q_min; this.q_delta=q_delta;
-			this.q_quant=q_quant; this.q_sequencep=q_sequencep; 
-			this.quantlist=quantlist;
-		}
+		internal EncodeAuxNearestMatch nearest_tree = null;
+		internal EncodeAuxThreshMatch  thresh_tree = null;
 
 		internal int pack(csBuffer opb)
 		{
-			int i;
-			bool ordered=false;
+			bool ordered = false;
 
-			opb.write(0x564342,24);
+			opb.write(0x564342, 24);
 			opb.write(dim, 16);
 			opb.write(entries, 24);
 
 			// pack the codewords.  There are two packings; length ordered and
 			// length random.  Decide between the two now.
-  
-			for(i=1;i<entries;i++)
+			int i;
+			for (i = 1; i < entries; i++)
 			{
-				if(lengthlist[i]<lengthlist[i-1])break;
+				if (lengthlist[i] < lengthlist[i - 1])
+					break;
 			}
-			if(i==entries)ordered=true;
-  
-			if(ordered)
+			if (i == entries)
+				ordered = true;
+
+			if (ordered)
 			{
 				// length ordered.  We only need to say how many codewords of
 				// each length.  The actual codewords are generated
 				// deterministically
 
-				int count=0;
-				opb.write(1,1);               // ordered
-				opb.write(lengthlist[0]-1,5); // 1 to 32
+				int count = 0;
+				opb.write(1, 1); // ordered
+				opb.write(lengthlist[0] - 1, 5); // 1 to 32
 
-				for(i=1;i<entries;i++)
+				for (i = 1; i < entries; i++)
 				{
-					int _this=lengthlist[i];
-					int _last=lengthlist[i-1];
-					if(_this>_last)
+					int _this = lengthlist[i];
+					int _last = lengthlist[i - 1];
+					if (_this > _last)
 					{
-						for(int j=_last;j<_this;j++)
+						for (int j = _last; j < _this; j++)
 						{
-							opb.write(i-count,ilog(entries-count));
-							count=i;
+							opb.write(i - count, Util.ilog(entries - count));
+							count = i;
 						}
 					}
 				}
-				opb.write(i-count,ilog(entries-count));
+				opb.write(i - count, Util.ilog(entries - count));
 			}
 			else
 			{
 				// length random.  Again, we don't code the codeword itself, just
 				// the length.  This time, though, we have to encode each length
-				opb.write(0,1);   // unordered
-    
+				opb.write(0, 1); // unordered
+
 				// algortihmic mapping has use for 'unused entries', which we tag
 				// here.  The algorithmic mapping happens as usual, but the unused
 				// entry has no codeword.
-				for(i=0;i<entries;i++)
+				for (i = 0; i < entries; i++)
 				{
-					if(lengthlist[i]==0)break;
+					if (lengthlist[i] == 0)
+						break;
 				}
 
-				if(i==entries)
+				if (i == entries)
 				{
-					opb.write(0,1); // no unused entries
-					for(i=0;i<entries;i++)
+					opb.write(0, 1); // no unused entries
+					for (i = 0; i < entries; i++)
 					{
-						opb.write(lengthlist[i]-1,5);
+						opb.write(lengthlist[i] - 1, 5);
 					}
 				}
 				else
 				{
-					opb.write(1,1); // we have unused entries; thus we tag
-					for(i=0;i<entries;i++)
+					opb.write(1, 1); // we have unused entries; thus we tag
+					for (i = 0; i < entries; i++)
 					{
-						if(lengthlist[i]==0)
+						if (lengthlist[i] == 0)
 						{
-							opb.write(0,1);
+							opb.write(0, 1);
 						}
 						else
 						{
-							opb.write(1,1);
-							opb.write(lengthlist[i]-1,5);
+							opb.write(1, 1);
+							opb.write(lengthlist[i] - 1, 5);
 						}
 					}
 				}
@@ -160,8 +146,8 @@ namespace csvorbis
 
 			// is the entry number the desired return value, or do we have a
 			// mapping? If we have a mapping, what type?
-			opb.write(maptype,4);
-			switch(maptype)
+			opb.write(maptype, 4);
+			switch (maptype)
 			{
 				case 0:
 					// no mapping
@@ -170,139 +156,129 @@ namespace csvorbis
 				case 2:
 					// implicitly populated value mapping
 					// explicitly populated value mapping
-					if(quantlist==null)
+					if (quantlist == null)
 					{
 						// no quantlist?  error
-						return(-1);
+						return -1;
 					}
-    
+
 					// values that define the dequantization
-					opb.write(q_min,32);
-					opb.write(q_delta,32);
-					opb.write(q_quant-1,4);
-					opb.write(q_sequencep,1);
-    
+					opb.write(q_min, 32);
+					opb.write(q_delta, 32);
+					opb.write(q_quant - 1, 4);
+					opb.write(q_sequencep, 1);
+
 				{
-					int quantvals=0;
-					switch(maptype)
+					int quantvals = 0;
+					switch (maptype)
 					{
 						case 1:
 							// a single column of (c->entries/c->dim) quantized values for
 							// building a full value list algorithmically (square lattice)
-							quantvals=maptype1_quantvals();
+							quantvals = maptype1_quantvals();
 							break;
 						case 2:
 							// every value (c->entries*c->dim total) specified explicitly
-							quantvals=entries*dim;
+							quantvals = entries*dim;
 							break;
 					}
 
 					// quantized values
-					for(i=0;i<quantvals;i++)
+					for (i = 0; i < quantvals; i++)
 					{
-						opb.write(Math.Abs(quantlist[i]),q_quant);
+						opb.write(Math.Abs(quantlist[i]), q_quant);
 					}
 				}
 					break;
 				default:
 					// error case; we don't have any other map types now
-					return(-1);
+					return -1;
 			}
-			return(0);
+			return 0;
 		}
-		/*
-		*/
 
 		// unpacks a codebook from the packet buffer into the codebook struct,
 		// readies the codebook auxiliary structures for decode
 		internal int unpack(csBuffer opb)
 		{
-			int i;
-			//memset(s,0,sizeof(static_codebook));
-
 			// make sure alignment is correct
-			if(opb.read(24)!=0x564342)
+			if (opb.read(24) != 0x564342)
 			{
-				//    goto _eofout;
 				clear();
-				return(-1); 
+				return -1;
 			}
 
 			// first the basic parameters
-			dim=opb.read(16);
-			entries=opb.read(24);
-			if(entries==-1)
+			dim = opb.read(16);
+			entries = opb.read(24);
+			if (entries == -1)
 			{
-				//    goto _eofout;
 				clear();
-				return(-1); 
+				return -1;
 			}
 
 			// codeword ordering.... length ordered or unordered?
-			switch(opb.read(1))
+			switch (opb.read(1))
 			{
 				case 0:
 					// unordered
-					lengthlist=new int[entries];
+					lengthlist = new int[entries];
 
 					// allocated but unused entries?
-					if(opb.read(1)!=0)
+					if (opb.read(1) != 0)
 					{
 						// yes, unused entries
 
-						for(i=0;i<entries;i++)
+						for (int i = 0; i < entries; i++)
 						{
-							if(opb.read(1)!=0)
+							if (opb.read(1) != 0)
 							{
-								int num=opb.read(5);
-								if(num==-1)
+								int num = opb.read(5);
+								if (num == -1)
 								{
-									//            goto _eofout;
 									clear();
-									return(-1); 
+									return -1;
 								}
-								lengthlist[i]=num+1;
+								lengthlist[i] = num + 1;
 							}
 							else
 							{
-								lengthlist[i]=0;
+								lengthlist[i] = 0;
 							}
 						}
 					}
 					else
 					{
 						// all entries used; no tagging
-						for(i=0;i<entries;i++)
+						for (int i = 0; i < entries; i++)
 						{
-							int num=opb.read(5);
-							if(num==-1)
+							int num = opb.read(5);
+							if (num == -1)
 							{
-								//          goto _eofout;
 								clear();
-								return(-1); 
+								return GetHashCode() - 1;
 							}
-							lengthlist[i]=num+1;
+							lengthlist[i] = num + 1;
 						}
 					}
 					break;
 				case 1:
 					// ordered
 				{
-					int length=opb.read(5)+1;
-					lengthlist=new int[entries];
+					int length = opb.read(5) + 1;
+					lengthlist = new int[entries];
 
-					for(i=0;i<entries;)
+					for (int i = 0; i < entries;)
 					{
-						int num=opb.read(ilog(entries-i));
-						if(num==-1)
+						int num = opb.read(Util.ilog(entries - i));
+						if (num == -1)
 						{
-							//          goto _eofout;
 							clear();
-							return(-1); 
+							return -1;
 						}
-						for(int j=0;j<num;j++,i++)
+						for (int j = 0; j < num; j++,i++)
 						{
-							lengthlist[i]=length;
+							lengthlist[i] = length;
 						}
 						length++;
 					}
@@ -310,11 +286,11 @@ namespace csvorbis
 					break;
 				default:
 					// EOF
-					return(-1);
+					return -1;
 			}
-  
+
 			// Do we have a mapping to unpack?
-			switch((maptype=opb.read(4)))
+			switch ((maptype = opb.read(4)))
 			{
 				case 0:
 					// no mapping
@@ -323,48 +299,43 @@ namespace csvorbis
 				case 2:
 					// implicitly populated value mapping
 					// explicitly populated value mapping
-					q_min=opb.read(32);
-					q_delta=opb.read(32);
-					q_quant=opb.read(4)+1;
-					q_sequencep=opb.read(1);
+					q_min = opb.read(32);
+					q_delta = opb.read(32);
+					q_quant = opb.read(4) + 1;
+					q_sequencep = opb.read(1);
 
 				{
-					int quantvals=0;
-					switch(maptype)
+					int quantvals = 0;
+					switch (maptype)
 					{
 						case 1:
-							quantvals=maptype1_quantvals();
+							quantvals = maptype1_quantvals();
 							break;
 						case 2:
-							quantvals=entries*dim;
+							quantvals = entries*dim;
 							break;
 					}
-      
+
 					// quantized values
-					quantlist=new int[quantvals];
-					for(i=0;i<quantvals;i++)
+					quantlist = new int[quantvals];
+					for (int i = 0; i < quantvals; i++)
 					{
-						quantlist[i]=opb.read(q_quant);
+						quantlist[i] = opb.read(q_quant);
 					}
-					if(quantlist[quantvals-1]==-1)
+					if (quantlist[quantvals - 1] == -1)
 					{
-						//        goto _eofout;
 						clear();
-						return(-1); 
+						return -1;
 					}
 				}
 					break;
 				default:
-					//    goto _eofout;
 					clear();
-					return(-1); 
+					return -1;
 			}
+
 			// all set
-			return(0);
-			//    _errout:
-			//    _eofout:
-			//    vorbis_staticbook_clear(s);
-			//    return(-1); 
+			return 0;
 		}
 
 		// there might be a straightforward one-line way to do the below
@@ -372,50 +343,39 @@ namespace csvorbis
 		// thought of it.  Therefore, we opt on the side of caution
 		internal int maptype1_quantvals()
 		{
-			int vals=(int)(Math.Floor(Math.Pow(entries,1.0/dim)));
+			int vals = (int) (Math.Floor(Math.Pow(entries, 1.0/dim)));
 
 			// the above *should* be reliable, but we'll not assume that FP is
 			// ever reliable when bitstream sync is at stake; verify via integer
 			// means that vals really is the greatest value of dim for which
 			// vals^b->bim <= b->entries
 			// treat the above as an initial guess
-			while(true)
+			while (true)
 			{
-				int acc=1;
-				int acc1=1;
-				for(int i=0;i<dim;i++)
+				int acc = 1;
+				int acc1 = 1;
+				for (int i = 0; i < dim; i++)
 				{
-					acc*=vals;
-					acc1*=vals+1;
+					acc *= vals;
+					acc1 *= vals + 1;
 				}
-				if(acc<=entries && acc1>entries){	return(vals); }
+
+				if (acc <= entries && acc1 > entries)
+				{
+					return vals;
+				}
 				else
 				{
-					if(acc>entries){ vals--; }
-					else{ vals++; }
+					if (acc > entries)
+						vals--;
+					else
+						vals++;
 				}
 			}
 		}
-    
+
 		internal void clear()
 		{
-			//  if(quantlist!=null)free(b->quantlist);
-			//  if(lengthlist!=null)free(b->lengthlist);
-			//  if(nearest_tree!=null){
-			//    free(b->nearest_tree->ptr0);
-			//    free(b->nearest_tree->ptr1);
-			//    free(b->nearest_tree->p);
-			//    free(b->nearest_tree->q);
-			//    memset(b->nearest_tree,0,sizeof(encode_aux_nearestmatch));
-			//    free(b->nearest_tree);
-			//  }
-			//  if(thresh_tree!=null){
-			//    free(b->thresh_tree->quantthresh);
-			//    free(b->thresh_tree->quantmap);
-			//    memset(b->thresh_tree,0,sizeof(encode_aux_threshmatch));
-			//    free(b->thresh_tree);
-			//  }
-			//  memset(b,0,sizeof(static_codebook));
 		}
 
 		// unpack the quantized list of values for encode/decode
@@ -425,19 +385,15 @@ namespace csvorbis
 		// in in an explicit list.  Both value lists must be unpacked
 		internal float[] unquantize()
 		{
-
-			if(maptype==1 || maptype==2)
+			if (maptype == 1 || maptype == 2)
 			{
-				int quantvals;
-				float mindel=float32_unpack(q_min);
-				float delta=float32_unpack(q_delta);
-				float[] r=new float[entries*dim];
-
-				//System.err.println("q_min="+q_min+", mindel="+mindel);
+				float mindel = float32_unpack(q_min);
+				float delta = float32_unpack(q_delta);
+				float[] r = new float[entries*dim];
 
 				// maptype 1 and 2 both use a quantized value vector, but
 				// different sizes
-				switch(maptype)
+				switch (maptype)
 				{
 					case 1:
 						// most of the time, entries%dimensions == 0, but we need to be
@@ -446,97 +402,90 @@ namespace csvorbis
 						// have 'too few' values (values*dim<entries), which means that
 						// we'll have 'left over' entries; left over entries use zeroed
 						// values (and are wasted).  So don't generate codebooks like that
-						quantvals=maptype1_quantvals();
-						for(int j=0;j<entries;j++)
+						int quantvals = maptype1_quantvals();
+						for (int j = 0; j < entries; j++)
 						{
-							float last=0.0f;
-							int indexdiv=1;
-							for(int k=0;k<dim;k++)
+							float last = 0.0f;
+							int indexdiv = 1;
+							for (int k = 0; k < dim; k++)
 							{
-								int index=(j/indexdiv)%quantvals;
-								float val=quantlist[index];
-								val=Math.Abs(val)*delta+mindel+last;
-								if(q_sequencep!=0)last=val;	  
-								r[j*dim+k]=val;
-								indexdiv*=quantvals;
+								int index = (j/indexdiv)%quantvals;
+								float val = quantlist[index];
+								val = Math.Abs(val)*delta + mindel + last;
+
+								if (q_sequencep != 0)
+									last = val;
+
+								r[j*dim + k] = val;
+								indexdiv *= quantvals;
 							}
 						}
 						break;
+
 					case 2:
-						for(int j=0;j<entries;j++)
+						for (int j = 0; j < entries; j++)
 						{
-							float last=0.0f;
-							for(int k=0;k<dim;k++)
+							float last = 0.0f;
+							for (int k = 0; k < dim; k++)
 							{
-								float val=quantlist[j*dim+k];
-								//if((j*dim+k)==0){System.err.println(" | 0 -> "+val+" | ");}
-								val=Math.Abs(val)*delta+mindel+last;
-								if(q_sequencep!=0)last=val;	  
-								r[j*dim+k]=val;
-								//if((j*dim+k)==0){System.err.println(" $ r[0] -> "+r[0]+" | ");}
+								float val = quantlist[j*dim + k];
+								val = Math.Abs(val)*delta + mindel + last;
+
+								if (q_sequencep != 0)
+									last = val;
+
+								r[j*dim + k] = val;
 							}
 						}
-						//System.err.println("\nr[0]="+r[0]);
-						break;
-					default:
 						break;
 				}
-				return(r);
-			}
-			return(null);
-		}
 
-		internal static int ilog(int v)
-		{
-			int ret=0;
-			while(v!=0)
-			{
-				ret++;
-				v = (int)((uint)v >> 1);
+				return r;
 			}
-			return(ret);
+
+			return null;
 		}
 
 		// 32 bit float (not IEEE; nonnormalized mantissa +
 		// biased exponent) : neeeeeee eeemmmmm mmmmmmmm mmmmmmmm 
 		// Why not IEEE?  It's just not that important here.
 
-		//static int VQ_FEXP=10;
-		static int VQ_FMAN=21;
-		static int VQ_FEXP_BIAS=768; // bias toward values smaller than 1.
+		//private const int VQ_FEXP=10;
+		private const int VQ_FMAN = 21;
+		private const int VQ_FEXP_BIAS = 768; // bias toward values smaller than 1.
 
 		// doesn't currently guard under/overflow 
 		internal static long float32_pack(float val)
 		{
-			uint sign=0;
-			int exp;
-			int mant;
-			if(val<0)
+			uint sign = 0;
+
+			if (val < 0)
 			{
 				sign = 0x80000000;
 				val = -val;
 			}
-			exp=(int)Math.Floor(Math.Log(val)/Math.Log(2));
-			mant=(int)Math.Round(Math.Pow(val,(VQ_FMAN-1)-exp));
-			exp=(exp+VQ_FEXP_BIAS)<<VQ_FMAN;
-			return((int)sign | exp | mant);
+
+			int exp = (int) Math.Floor(Math.Log(val)/Math.Log(2)+0.001); // +0.001 = epsilon.
+			int mant = (int) Math.Round(ldexp(exp, (VQ_FMAN - 1) - exp));
+			exp = (exp + VQ_FEXP_BIAS) << VQ_FMAN;
+
+			return ((int) sign | exp | mant);
 		}
 
 		internal static float float32_unpack(int val)
 		{
-			float mant=val&0x1fffff;
-			float sign=val&0x80000000;
-			float exp =(uint)(val&0x7fe00000) >> VQ_FMAN;
-			//System.err.println("mant="+mant+", sign="+sign+", exp="+exp);
-			//if(sign!=0.0)mant= -mant;
-			if((val&0x80000000)!=0)mant= -mant;
-			//System.err.println("mant="+mant);
-			return(ldexp(mant,((int)exp)-(VQ_FMAN-1)-VQ_FEXP_BIAS));
+			float mant = val & 0x1fffff;
+			float exp = (uint) (val & 0x7fe00000) >> VQ_FMAN;
+
+			if ((val & 0x80000000) != 0)
+				mant = -mant;
+
+			return (ldexp(mant, ((int) exp) - (VQ_FMAN - 1) - VQ_FEXP_BIAS));
 		}
 
 		internal static float ldexp(float foo, int e)
 		{
-			return (float)(foo*Math.Pow(2, e));
+			return (float) (foo*Math.Pow(2, e));
 		}
 	}
 }

@@ -32,36 +32,37 @@ namespace csogg
 	/// </summary>
 	public class StreamState
 	{
-		byte[] body_data;    /* bytes from packet bodies */
-		int body_storage;    /* storage elements allocated */
-		int body_fill;       /* elements stored; fill mark */
-		private  int body_returned;   /* elements of fill returned */
+		private byte[] body_data;     /* Bytes from packet bodies */
+		private int body_storage;     /* Storage elements allocated */
+		private int body_fill;        /* Elements stored; fill mark */
+		private  int body_returned;   /* Elements of fill returned */
 
 
-		int[] lacing_vals;    /* The values that will go to the segment table */
-		long[] granule_vals;  /* pcm_pos values for headers. Not compact
-			   this way, but it is simple coupled to the
-			   lacing fifo */
-		int lacing_storage;
-		int lacing_fill;
-		int lacing_packet;
-		int lacing_returned;
+		private int[] lacing_vals;    /* The values that will go to the segment table */
+		private long[] granule_vals;  /* pcm_pos values for headers. Not compact
+										 this way, but it is simple coupled to the
+										 lacing fifo */
 
-		byte[] header=new byte[282];      /* working space for header encode */
-		int header_fill;
+		private int lacing_storage;
+		private int lacing_fill;
+		private int lacing_packet;
+		private int lacing_returned;
 
-		public int e_o_s;   /* set when we have buffered the last packet in the
-			 logical bitstream */
-		int b_o_s;          /* set after we've written the initial page
-			 of a logical bitstream */
-		int serialno;
-		int pageno;
-		long packetno;      /* sequence number for decode; the framing
-                         knows where there's a hole in the data,
-                         but we need coupling so that the codec
-                         (which is in a seperate abstraction
-                         layer) also knows about the gap */
-		long granulepos;
+		private byte[] header = new byte[282];      /* Working space for header encode */
+		private int header_fill;
+
+		public int e_o_s;   /* Set when we have buffered the last packet in the logical bitstream */
+		private int b_o_s;  /* Set after we've written the initial page of a logical bitstream */
+
+		private int serialno;
+		private int pageno;
+		private long packetno;    /* Sequence number for decode; the framing
+									 knows where there's a hole in the data,
+									 but we need coupling so that the codec
+									 (which is in a seperate abstraction
+									 layer) also knows about the gap */
+
+		private long granulepos;
 
 		StreamState(int serialno) : this()
 		{
@@ -81,6 +82,7 @@ namespace csogg
 			lacing_vals=new int[lacing_storage];
 			granule_vals=new long[lacing_storage];
 		}
+
 		public void init(int serialno)
 		{
 			if(body_data==null){ init(); }
@@ -92,17 +94,20 @@ namespace csogg
 			}
 			this.serialno=serialno;
 		}
+
 		public void clear()
 		{
 			body_data=null;
 			lacing_vals=null;
 			granule_vals=null;
-			//memset(os,0,sizeof(ogg_stream_state));    
+			//memset(os,0,sizeof(ogg_stream_state));
 		}
+
 		void destroy()
 		{
 			clear();
 		}
+
 		void body_expand(int needed)
 		{
 			if(body_storage<=body_fill+needed)
@@ -113,6 +118,7 @@ namespace csogg
 				body_data=foo;
 			}
 		}
+
 		void lacing_expand(int needed)
 		{
 			if(lacing_storage<=lacing_fill+needed)
@@ -128,17 +134,17 @@ namespace csogg
 			}
 		}
 
-		/* submit data to the internal buffer of the framing engine */
+		/* Submit data to the internal buffer of the framing engine */
 		public int packetin(Packet op)
 		{
 			int lacing_val=op.bytes/255+1;
 
 			if(body_returned!=0)
 			{
-				/* advance packet data according to the body_returned pointer. We
+				/* Advance packet data according to the body_returned pointer. We
 					   had to keep it around to return a pointer into the buffer last
 					   call */
-    
+
 				body_fill-=body_returned;
 				if(body_fill!=0)
 				{
@@ -147,7 +153,7 @@ namespace csogg
 				body_returned=0;
 			}
 
-			/* make sure we have the buffer storage */
+			/* Make sure we have the buffer storage */
 			body_expand(op.bytes);
 			lacing_expand(lacing_val);
 
@@ -158,7 +164,6 @@ namespace csogg
 
 			Array.Copy(op.packet_base, op.packet, body_data, body_fill, op.bytes);
 			body_fill+=op.bytes;
-			//System.out.println("add: "+body_fill);
 
 			/* Store lacing vals for this packet */
 			int j;
@@ -170,24 +175,25 @@ namespace csogg
 			lacing_vals[lacing_fill+j]=(op.bytes)%255;
 			granulepos=granule_vals[lacing_fill+j]=op.granulepos;
 
-			/* flag the first segment as the beginning of the packet */
+			/* Flag the first segment as the beginning of the packet */
 			lacing_vals[lacing_fill]|= 0x100;
 
 			lacing_fill+=lacing_val;
 
-			/* for the sake of completeness */
+			/* For the sake of completeness */
 			packetno++;
 
-			if(op.e_o_s!=0)e_o_s=1;
+			if(op.e_o_s != 0)
+				e_o_s=1;
+
 			return(0);
 		}
 
 		public int packetout(Packet op)
 		{
 
-			/* The last part of decode. We have the stream broken into packet
-				   segments.  Now we need to group them into packets (or return the
-				   out of sync markers) */
+			// The last part of decode. We have the stream broken into packet
+			// segments.  Now we need to group them into packets (or return the out of sync markers)
 
 			int ptr=lacing_returned;
 
@@ -201,8 +207,7 @@ namespace csogg
 				/* We lost sync here; let the app know */
 				lacing_returned++;
 
-				/* we need to tell the codec there's a gap; it might need to
-					   handle previous packet dependencies. */
+				/* We need to tell the codec there's a gap; it might need to handle previous packet dependencies. */
 				packetno++;
 				return(-1);
 			}
@@ -214,15 +219,18 @@ namespace csogg
 
 			op.packet_base=body_data;
 			op.packet=body_returned;
-			op.e_o_s=lacing_vals[ptr]&0x200; /* last packet of the stream? */
-			op.b_o_s=lacing_vals[ptr]&0x100; /* first packet of the stream? */
+			op.e_o_s=lacing_vals[ptr]&0x200; /* Last packet of the stream? */
+			op.b_o_s=lacing_vals[ptr]&0x100; /* First packet of the stream? */
 			bytes+=size;
 
 			while(size==255)
 			{
 				int val=lacing_vals[++ptr];
 				size=val&0xff;
-				if((val&0x200)!=0)op.e_o_s=0x200;
+
+				if((val & 0x200) != 0)
+					op.e_o_s = 0x200;
+
 				bytes+=size;
 			}
 
@@ -230,9 +238,7 @@ namespace csogg
 			op.granulepos=granule_vals[ptr];
 			op.bytes=bytes;
 
-			//System.out.println(this+" # body_returned="+body_returned);
 			body_returned+=bytes;
-			//System.out.println(this+"## body_returned="+body_returned);
 
 			lacing_returned=ptr+1;
 		}
@@ -262,14 +268,12 @@ namespace csogg
 			int _pageno=og.pageno();
 			int segments=header_base[header+26]&0xff;
 
-			// clean up 'returned data'
+			// Clean up 'returned data'
 		{
 			int lr=lacing_returned;
 			int br=body_returned;
 
-			// body data
-
-			//System.out.println("br="+br+", body_fill="+body_fill);
+			// Body data
 
 			if(br!=0)
 			{
@@ -281,11 +285,9 @@ namespace csogg
 				body_returned=0;
 			}
 
-			//System.out.println("?? br="+br+", body_fill="+body_fill+" body_returned="+body_returned);
-
-			if(lr!=0)
+			if(lr != 0)
 			{
-				// segment table
+				// Segment table
 				if((lacing_fill-lr)!=0)
 				{
 					Array.Copy(lacing_vals, lr, lacing_vals, 0, lacing_fill-lr);
@@ -297,43 +299,39 @@ namespace csogg
 			}
 		}
 
-			// check the serial number
-			if(_serialno!=serialno)return(-1);
-			if(version>0)return(-1);
+			// Check the serial number
+			if(_serialno != serialno) return(-1);
+			if(version > 0)           return(-1);
 
 			lacing_expand(segments+1);
 
-			// are we in sequence?
+			// Are we in sequence?
 			if(_pageno!=pageno)
 			{
-				int i;
-
-				// unroll previous partial packet (if any)
-				for(i=lacing_packet;i<lacing_fill;i++)
+				// Unroll previous partial packet (if any)
+				for(int i=lacing_packet;i<lacing_fill;i++)
 				{
 					body_fill-=lacing_vals[i]&0xff;
-					//System.out.println("??");
 				}
 				lacing_fill=lacing_packet;
 
-				// make a note of dropped data in segment table
-				if(pageno!=-1)
+				// Make a note of dropped data in segment table
+				if(pageno != -1)
 				{
 					lacing_vals[lacing_fill++]=0x400;
 					lacing_packet++;
 				}
 
-				// are we a 'continued packet' page?  If so, we'll need to skip
-				// some segments
-				if(continued!=0)
+				// Are we a 'continued packet' page?  If so, we'll need to skip some segments
+				if(continued != 0)
 				{
 					bos=0;
-					for(;segptr<segments;segptr++)
+					for(;segptr < segments; segptr++)
 					{
-						int val=(header_base[header+27+segptr]&0xff);
-						body+=val;
-						bodysize-=val;
-						if(val<255)
+						int val = (header_base[header+27+segptr] & 0xff);
+						body += val;
+						bodysize -= val;
+						if(val < 255)
 						{
 							segptr++;
 							break;
@@ -342,8 +340,6 @@ namespace csogg
 				}
 			}
 
-			//System.out.println("bodysize="+bodysize);
-
 			if(bodysize!=0)
 			{
 				body_expand(bodysize);
@@ -351,31 +347,31 @@ namespace csogg
 				body_fill+=bodysize;
 			}
 
-			//System.out.println("bodyfill="+body_fill);
-
 		{
 			int saved=-1;
-			while(segptr<segments)
+			while(segptr < segments)
 			{
 				int val=(header_base[header+27+segptr]&0xff);
 				lacing_vals[lacing_fill]=val;
 				granule_vals[lacing_fill]=-1;
-      
+
 				if(bos!=0)
 				{
 					lacing_vals[lacing_fill]|=0x100;
 					bos=0;
 				}
-      
-				if(val<255)saved=lacing_fill;
-      
+
+				if(val < 255)
+					saved=lacing_fill;
+
 				lacing_fill++;
 				segptr++;
-      
-				if(val<255)lacing_packet=lacing_fill;
+
+				if(val < 255)
+					lacing_packet=lacing_fill;
 			}
-  
-			/* set the granulepos on the last pcmval of the last full packet */
+
+			/* Set the granulepos on the last pcmval of the last full packet */
 			if(saved!=-1)
 			{
 				granule_vals[saved]=granulepos;
@@ -394,25 +390,22 @@ namespace csogg
 		}
 
 
-		/* This will flush remaining packets into a page (returning nonzero),
-			   even if there is not enough data to trigger a flush normally
-			   (undersized page). If there are no packets or partial packets to
-			   flush, ogg_stream_flush returns 0.  Note that ogg_stream_flush will
-			   try to flush a normal sized page like ogg_stream_pageout; a call to
-			   ogg_stream_flush does not gurantee that all packets have flushed.
-			   Only a return value of 0 from ogg_stream_flush indicates all packet
-			   data is flushed into pages.
-
-			   ogg_stream_page will flush the last page in a stream even if it's
-			   undersized; you almost certainly want to use ogg_stream_pageout
-			   (and *not* ogg_stream_flush) unless you need to flush an undersized
-			   page in the middle of a stream for some reason. */
+		// This will flush remaining packets into a page (returning nonzero),
+		// even if there is not enough data to trigger a flush normally
+		// (undersized page). If there are no packets or partial packets to
+		// flush, ogg_stream_flush returns 0.  Note that ogg_stream_flush will
+		// try to flush a normal sized page like ogg_stream_pageout; a call to
+		// ogg_stream_flush does not gurantee that all packets have flushed.
+		// Only a return value of 0 from ogg_stream_flush indicates all packet
+		// data is flushed into pages.
+		//
+		// ogg_stream_page will flush the last page in a stream even if it's
+		// undersized; you almost certainly want to use ogg_stream_pageout
+		// (and *not* ogg_stream_flush) unless you need to flush an undersized
+		// page in the middle of a stream for some reason.
 
 		public int flush(Page og)
 		{
-
-			//System.out.println(this+" ---body_returned: "+body_returned);
-
 			int i;
 			int vals=0;
 			int maxvals=(lacing_fill>255?255:lacing_fill);
@@ -421,12 +414,11 @@ namespace csogg
 			long granule_pos=granule_vals[0];
 
 			if(maxvals==0)return(0);
-  
-			/* construct a page */
-			/* decide how many segments to include */
-  
-			/* If this is the initial header case, the first page must only include
-				   the initial header packet */
+
+			/* Construct a page */
+			/* Decide how many segments to include */
+
+			/* If this is the initial header case, the first page must only include the initial header packet */
 			if(b_o_s==0)
 			{  /* 'initial header page' case */
 				granule_pos=0;
@@ -449,23 +441,28 @@ namespace csogg
 				}
 			}
 
-			/* construct the header in temp storage */
+			/* Construct the header in temp storage */
 
-		    String oggs_str = "OggS";
+			string oggs_str = "OggS";
 			Encoding AE = Encoding.UTF8;
 			byte[] oggs_byt = AE.GetBytes(oggs_str);
 			Array.Copy(oggs_byt, 0, header, 0, oggs_byt.Length);
-  
-			/* stream structure version */
+
+			/* Stream structure version */
 			header[4]=0x00;
 
-			/* continued packet flag? */
+			/* Continued packet flag? */
 			header[5]=0x00;
-			if((lacing_vals[0]&0x100)==0)header[5]|=0x01;
-			/* first page flag? */
-			if(b_o_s==0) header[5]|=0x02;
-			/* last page flag? */
-			if(e_o_s!=0 && lacing_fill==vals) header[5]|=0x04;
+			if((lacing_vals[0]&0x100) == 0)
+				header[5] |= 0x01;
+
+			/* First page flag? */
+			if(b_o_s == 0)
+				header[5] |= 0x02;
+
+			/* Last page flag? */
+			if(e_o_s!=0 && lacing_fill==vals)
+				header[5] |= 0x04;
 			b_o_s=1;
 
 			/* 64 bits of PCM position */
@@ -485,13 +482,11 @@ namespace csogg
 			}
 		}
 
-			/* 32 bits of page counter (we have both counter and page header
-				   because this val can roll over) */
-			if(pageno==-1)pageno=0;       /* because someone called
-				     stream_reset; this would be a
-				     strange thing to do in an
-				     encode stream, but it has
-				     plausible uses */
+			/* 32 bits of page counter (we have both counter and page header because this val can roll over) */
+			if(pageno==-1) pageno=0;  /* because someone called stream_reset; this would be a
+										 strange thing to do in an
+										 encode stream, but it has
+										 plausible uses */
 		{
 			int _pageno=pageno++;
 			for(i=18;i<22;i++)
@@ -500,22 +495,22 @@ namespace csogg
 				_pageno>>=8;
 			}
 		}
-  
-			/* zero for computation; filled in later */
+
+			/* Zero for computation; filled in later */
 			header[22]=0;
 			header[23]=0;
 			header[24]=0;
 			header[25]=0;
-  
-			/* segment table */
+
+			/* Segment table */
 			header[26]=(byte)vals;
 			for(i=0;i<vals;i++)
 			{
 				header[i+27]=(byte)lacing_vals[i];
 				bytes+=(header[i+27]&0xff);
 			}
-  
-			/* set pointers in the ogg_page struct */
+
+			/* Set pointers in the ogg_page struct */
 			og.header_base=header;
 			og.header=0;
 			og.header_len=header_fill=vals+27;
@@ -523,15 +518,15 @@ namespace csogg
 			og.body=body_returned;
 			og.body_len=bytes;
 
-			/* advance the lacing data and set the body_returned pointer */
-  
+			/* Advance the lacing data and set the body_returned pointer */
+
 			lacing_fill-=vals;
 			Array.Copy(lacing_vals, vals, lacing_vals, 0, lacing_fill*4);
 			Array.Copy(granule_vals, vals, granule_vals, 0, lacing_fill*8);
 			body_returned+=bytes;
-  
-			/* calculate the checksum */
-  
+
+			/* Calculate the checksum */
+
 			og.checksum();
 
 			/* done */
@@ -539,14 +534,14 @@ namespace csogg
 		}
 
 
-		/* This constructs pages from buffered packet segments.  The pointers
-			returned are to static buffers; do not free. The returned buffers are
-			good only until the next call (using the same ogg_stream_state) */
+		// This constructs pages from buffered packet segments.  The pointers
+		// returned are to static buffers; do not free. The returned buffers are
+		// good only until the next call (using the same ogg_stream_state) */
 		public int pageout(Page og)
 		{
-			if((e_o_s!=0&&lacing_fill!=0) ||  /* 'were done, now flush' case */
-				body_fill-body_returned> 4096 ||     /* 'page nominal size' case */
-				lacing_fill>=255 ||          /* 'segment table full' case */
+			if((e_o_s!=0&&lacing_fill!=0)     ||   // 'were done, now flush' case
+				body_fill-body_returned> 4096 ||   // 'page nominal size' case
+				lacing_fill>=255              ||   // 'segment table full' case
 				(lacing_fill!=0&&b_o_s==0))
 			{  /* 'initial header page' case */
 				return flush(og);

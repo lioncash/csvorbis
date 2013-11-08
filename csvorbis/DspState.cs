@@ -31,29 +31,28 @@ namespace csvorbis
 {
 	public class DspState
 	{
-		static float M_PI=3.1415926539f;
-		static int VI_TRANSFORMB=1;
-		static int VI_WINDOWB=1;
+		private const float M_PI = 3.1415926539f;
+		private const int VI_TRANSFORMB = 1;
+		private const int VI_WINDOWB = 1;
 
-		internal int analysisp;
+		internal int analysisp = 0;
 		internal Info vi;
 		internal int modebits;
 
-		float[][] pcm;
-		//float[][] pcmret;
-		int      pcm_storage;
-		int      pcm_current;
-		int      pcm_returned;
+		private float[][] pcm;
+		private int pcm_storage;
+		private int pcm_current;
+		private int pcm_returned;
 
-		float[]  multipliers;
-		int      envelope_storage;
-		int      envelope_current;
+		//float[]  multipliers;
+		//int      envelope_storage;
+		//int      envelope_current;
 
-		int eofflag;
+		//int eofflag;
 
 		int lW;
 		int W;
-		int nW;
+		// int nW;
 		int centerW;
 
 		long granulepos;
@@ -66,25 +65,23 @@ namespace csvorbis
 
 		// local lookup storage
 		//!!  Envelope ve=new Envelope(); // envelope
-		//float                **window[2][2][2]; // block, leadin, leadout, type
-		internal float[][][][][] wnd;                 // block, leadin, leadout, type
-		//vorbis_look_transform **transform[2];    // block, type 
-		internal Object[][] transform;
+		internal float[][][][][] wnd;     // block, leadin, leadout, type
+		internal object[][] transform;
 		internal CodeBook[] fullbooks;
 		// backend lookups are tied to the mode, not the backend or naked mapping
-		internal Object[] mode;
+		internal object[] mode;
 
 		// local storage, only used on the encoding side.  This way the
 		// application does not need to worry about freeing some packets'
 		// memory and not others'; packet storage is always tracked.
 		// Cleared next call to a _dsp_ function
-		byte[] header;
-		byte[] header1;
-		byte[] header2;
+		//byte[] header;
+		//byte[] header1;
+		//byte[] header2;
 
 		public DspState()
 		{
-			transform=new Object[2][];
+			transform=new object[2][];
 			wnd=new float[2][][][][];
 			wnd[0]=new float[2][][][];
 			wnd[0][0]=new float[2][][];
@@ -104,13 +101,15 @@ namespace csvorbis
 
 		private static int ilog2(int v)
 		{
-			int ret=0;
-			while(v>1)
+			int ret = 0;
+
+			while (v > 1)
 			{
 				ret++;
-				v = (int)((uint)v >> 1);
+				v = (int) ((uint) v >> 1);
 			}
-			return(ret);
+
+			return ret;
 		}
 
 		internal static float[] window(int type, int wnd, int left, int right)
@@ -123,7 +122,7 @@ namespace csvorbis
 				{
 					int leftbegin=wnd/4-left/2;
 					int rightbegin=wnd-wnd/4-right/2;
-    
+
 					for(int i=0;i<left;i++)
 					{
 						float x=(float)((i+.5)/left*M_PI/2.0);
@@ -133,12 +132,12 @@ namespace csvorbis
 						x=(float)Math.Sin(x);
 						ret[i+leftbegin]=x;
 					}
-      
+
 					for(int i=leftbegin+left;i<rightbegin;i++)
 					{
 						ret[i]=1.0f;
 					}
-      
+
 					for(int i=0;i<right;i++)
 					{
 						float x=(float)((right-i-.5)/right*M_PI/2.0);
@@ -151,124 +150,100 @@ namespace csvorbis
 				}
 					break;
 				default:
-					//free(ret);
-					return(null);
+					return null;
 			}
-			return(ret);
+			return ret;
 		}
 
 		// Analysis side code, but directly related to blocking.  Thus it's
 		// here and not in analysis.c (which is for analysis transforms only).
 		// The init is here because some of it is shared
 
-		int init(Info vi, bool encp)
+		private int init(Info vi, bool encp)
 		{
-			//memset(v,0,sizeof(vorbis_dsp_state));
-			this.vi=vi;
-			modebits=ilog2(vi.modes);
+			this.vi = vi;
+			modebits = ilog2(vi.modes);
 
-			transform[0]=new Object[VI_TRANSFORMB];
-			transform[1]=new Object[VI_TRANSFORMB];
+			transform[0] = new Object[VI_TRANSFORMB];
+			transform[1] = new Object[VI_TRANSFORMB];
 
 			// MDCT is tranform 0
 
-			transform[0][0]=new Mdct();
-			transform[1][0]=new Mdct();
-			((Mdct)transform[0][0]).init(vi.blocksizes[0]);
-			((Mdct)transform[1][0]).init(vi.blocksizes[1]);
+			transform[0][0] = new Mdct();
+			transform[1][0] = new Mdct();
+			((Mdct) transform[0][0]).init(vi.blocksizes[0]);
+			((Mdct) transform[1][0]).init(vi.blocksizes[1]);
 
-			wnd[0][0][0]=new float[VI_WINDOWB][];
-			wnd[0][0][1]=wnd[0][0][0];
-			wnd[0][1][0]=wnd[0][0][0];
-			wnd[0][1][1]=wnd[0][0][0];
-			wnd[1][0][0]=new float[VI_WINDOWB][];
-			wnd[1][0][1]=new float[VI_WINDOWB][];
-			wnd[1][1][0]=new float[VI_WINDOWB][];
-			wnd[1][1][1]=new float[VI_WINDOWB][];
+			wnd[0][0][0] = new float[VI_WINDOWB][];
+			wnd[0][0][1] = wnd[0][0][0];
+			wnd[0][1][0] = wnd[0][0][0];
+			wnd[0][1][1] = wnd[0][0][0];
+			wnd[1][0][0] = new float[VI_WINDOWB][];
+			wnd[1][0][1] = new float[VI_WINDOWB][];
+			wnd[1][1][0] = new float[VI_WINDOWB][];
+			wnd[1][1][1] = new float[VI_WINDOWB][];
 
-			for(int i=0;i<VI_WINDOWB;i++)
+			for (int i = 0; i < VI_WINDOWB; i++)
 			{
-				wnd[0][0][0][i]=
-					window(i,vi.blocksizes[0],vi.blocksizes[0]/2,vi.blocksizes[0]/2);
-				wnd[1][0][0][i]=
-					window(i,vi.blocksizes[1],vi.blocksizes[0]/2,vi.blocksizes[0]/2);
-				wnd[1][0][1][i]=
-					window(i,vi.blocksizes[1],vi.blocksizes[0]/2,vi.blocksizes[1]/2);
-				wnd[1][1][0][i]=
-					window(i,vi.blocksizes[1],vi.blocksizes[1]/2,vi.blocksizes[0]/2);
-				wnd[1][1][1][i]=
-					window(i,vi.blocksizes[1],vi.blocksizes[1]/2,vi.blocksizes[1]/2);
+				wnd[0][0][0][i] = window(i, vi.blocksizes[0], vi.blocksizes[0]/2, vi.blocksizes[0]/2);
+				wnd[1][0][0][i] = window(i, vi.blocksizes[1], vi.blocksizes[0]/2, vi.blocksizes[0]/2);
+				wnd[1][0][1][i] = window(i, vi.blocksizes[1], vi.blocksizes[0]/2, vi.blocksizes[1]/2);
+				wnd[1][1][0][i] = window(i, vi.blocksizes[1], vi.blocksizes[1]/2, vi.blocksizes[0]/2);
+				wnd[1][1][1][i] = window(i, vi.blocksizes[1], vi.blocksizes[1]/2, vi.blocksizes[1]/2);
 			}
 
-			//    if(encp){ // encode/decode differ here
-			//      // finish the codebooks
-			//      fullbooks=new CodeBook[vi.books];
-			//      for(int i=0;i<vi.books;i++){
-			//	fullbooks[i]=new CodeBook();
-			//	fullbooks[i].init_encode(vi.book_param[i]);
-			//      }
-			//      analysisp=1;
-			//    }
-			//    else{
 			// finish the codebooks
-			fullbooks=new CodeBook[vi.books];
-			for(int i=0;i<vi.books;i++)
+			fullbooks = new CodeBook[vi.books];
+			for (int i = 0; i < vi.books; i++)
 			{
-				fullbooks[i]=new CodeBook();
+				fullbooks[i] = new CodeBook();
 				fullbooks[i].init_decode(vi.book_param[i]);
 			}
 
-			//    }
-
-			// initialize the storage vectors to a decent size greater than the
-			// minimum
-  
-			pcm_storage=8192; // we'll assume later that we have
+			// initialize the storage vectors to a decent size greater than the minimum
+			pcm_storage = 8192; // we'll assume later that we have
 			// a minimum of twice the blocksize of
 			// accumulated samples in analysis
-			pcm=new float[vi.channels][];
-			//pcmret=new float[vi.channels][];
-		{
-			for(int i=0;i<vi.channels;i++)
+			pcm = new float[vi.channels][];
+			for (int i = 0; i < vi.channels; i++)
 			{
-				pcm[i]=new float[pcm_storage];
+				pcm[i] = new float[pcm_storage];
 			}
-		}
 
 			// all 1 (large block) or 0 (small block)
 			// explicitly set for the sake of clarity
-			lW=0; // previous window size
-			W=0;  // current window size
+			lW = 0; // previous window size
+			W = 0; // current window size
 
 			// all vector indexes; multiples of samples_per_envelope_step
-			centerW=vi.blocksizes[1]/2;
+			centerW = vi.blocksizes[1]/2;
 
-			pcm_current=centerW;
+			pcm_current = centerW;
 
 			// initialize all the mapping/backend lookups
-			mode=new Object[vi.modes];
+			mode = new Object[vi.modes];
 
-			for(int i=0;i<vi.modes;i++)
+			for (int i = 0; i < vi.modes; i++)
 			{
-				int mapnum=vi.mode_param[i].mapping;
-				int maptype=vi.map_type[mapnum];
+				int mapnum = vi.mode_param[i].mapping;
+				int maptype = vi.map_type[mapnum];
 
-				mode[i]=FuncMapping.mapping_P[maptype].look(this,vi.mode_param[i], 
+				mode[i] = FuncMapping.mapping_P[maptype].look(this, vi.mode_param[i],
 					vi.map_param[mapnum]);
-
 			}
-			return(0);
+
+			return 0;
 		}
 
 		public int synthesis_init(Info vi)
 		{
 			init(vi, false);
 			// Adjust centerW to allow an easier mechanism for determining output
-			pcm_returned=centerW;
-			centerW-= vi.blocksizes[W]/4+vi.blocksizes[lW]/4;
-			granulepos=-1;
-			sequence=-1;
-			return(0);
+			pcm_returned = centerW;
+			centerW -= vi.blocksizes[W]/4 + vi.blocksizes[lW]/4;
+			granulepos = -1;
+			sequence = -1;
+			return 0;
 		}
 
 		DspState(Info vi) : this()
@@ -281,7 +256,7 @@ namespace csvorbis
 			sequence=-1;
 		}
 
-		// Unike in analysis, the window is only partially applied for each
+		// Unlike in analysis, the window is only partially applied for each
 		// block.  The time domain envelope is not yet handled at the point of
 		// calling (as it relies on the previous block).
 
@@ -311,18 +286,17 @@ namespace csvorbis
 
 			lW=W;
 			W=vb.W;
-			nW=-1;
 
 			glue_bits+=vb.glue_bits;
 			time_bits+=vb.time_bits;
 			floor_bits+=vb.floor_bits;
 			res_bits+=vb.res_bits;
 
-			if(sequence+1 != vb.sequence)granulepos=-1; // out of sequence; lose count
+			if(sequence+1 != vb.sequence)
+				granulepos=-1; // out of sequence; lose count
 
 			sequence=vb.sequence;
 
-		{
 			int sizeW=vi.blocksizes[W];
 			int _centerW=centerW+vi.blocksizes[lW]/4+sizeW/4;
 			int beginW=_centerW-sizeW/2;
@@ -406,36 +380,38 @@ namespace csvorbis
 
 			centerW=_centerW;
 			pcm_current=endW;
-			if(vb.eofflag!=0)eofflag=1;
-		}
-			return(0);
+			//if(vb.eofflag!=0)eofflag=1;
+		
+			return 0;
 		}
 
 		// pcm==NULL indicates we just want the pending samples, no more
 		public int synthesis_pcmout(float[][][] _pcm, int[] index)
 		{
-			if(pcm_returned<centerW)
+			if (pcm_returned < centerW)
 			{
-				if(_pcm!=null)
+				if (_pcm != null)
 				{
-					for(int i=0;i<vi.channels;i++)
+					for (int i = 0; i < vi.channels; i++)
 					{
-						//	  pcmret[i]=pcm[i]+v.pcm_returned;
-						//!!!!!!!!
-						index[i]=pcm_returned;
+						index[i] = pcm_returned;
 					}
-					_pcm[0]=pcm;
+					_pcm[0] = pcm;
 				}
-				return(centerW-pcm_returned);
+				return (centerW - pcm_returned);
 			}
-			return(0);
+
+			return 0;
 		}
 
 		public int synthesis_read(int bytes)
 		{
-			if(bytes!=0 && pcm_returned+bytes>centerW)return(-1);
-			pcm_returned+=bytes;
-			return(0);
+			if (bytes != 0 && pcm_returned + bytes > centerW)
+				return -1;
+
+			pcm_returned += bytes;
+
+			return 0;
 		}
 
 		public void clear()

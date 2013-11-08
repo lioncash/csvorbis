@@ -94,9 +94,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AllocChain.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -184,6 +181,7 @@
     <Compile Include="Time0.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Util.cs" />
     <Compile Include="VorbisFile.cs">
       <SubType>Code</SubType>
     </Compile>

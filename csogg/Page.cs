@@ -22,8 +22,6 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-using System;
-
 namespace csogg
 {
 	/// <summary>
@@ -31,7 +29,7 @@ namespace csogg
 	/// </summary>
 	public class Page	
 	{
-		private static uint[] crc_lookup=new uint[256];
+		private static readonly uint[] crc_lookup = new uint[256];
 		
 		private static uint crc_entry(uint index)
 		{
@@ -107,7 +105,7 @@ namespace csogg
 		{
 			uint crc_reg=0;
 			uint a, b;
-    
+
 			for(int i=0;i<header_len;i++)
 			{
 				a = header_base[header+i] & 0xffu;
