@@ -134,6 +134,11 @@ namespace csvorbis
 			/* read the post list */
 			info.mult = opb.read(2) + 1; // only 1,2,3,4 legal now
 			int rangebits = opb.read(4);
+			if (rangebits < 0)
+			{
+				info.free();
+				return null;
+			}
 
 			for (int j = 0, k = 0; j < info.partitions; j++)
 			{
