@@ -1,42 +1,42 @@
 using System;
 using System.IO;
-using csogg;
-using csvorbis;
 
 namespace OggDecoder
 {
 	/// <summary>
 	/// Ogg Vorbis decoder test application.
 	/// </summary>
-	class Decoder
+	internal class Decoder
 	{
 		/// <summary>
 		/// The main entry point for the application.
 		/// </summary>
 		//[STAThread]
-		static void Main(string[] args) 
+		private static void Main(string[] args)
 		{
 			TextWriter s_err = Console.Error;
 			FileStream input = null, output = null;
-			
-			if(args.Length == 2)
+
+			if (args.Length == 2)
 			{
 				try
 				{
 					input = new FileStream(args[0], FileMode.Open, FileAccess.Read);
 					output = new FileStream(args[1], FileMode.OpenOrCreate);
 				}
-				catch(Exception e)
+				catch (Exception e)
 				{
 					s_err.WriteLine(e);
 				}
-			} 
-			else 
+			}
+			else
 			{
+				Console.WriteLine("Invalid number of commands entered.");
+				Console.WriteLine("Should resemble: OggDecoder [input] [output]");
 				return;
 			}
 
-			OggDecodeStream decode = new OggDecodeStream(input, true);
+			OggDecodeStream decode = new OggDecodeStream(input, false);
 
 			byte[] buffer = new byte[4096];
 			int read;

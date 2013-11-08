@@ -8,9 +8,12 @@ using csvorbis;
 
 namespace OggDecoder
 {
-	public class OggDecodeStream : Stream
+	/// <summary>
+	/// Stream for decoding OGG data.
+	/// </summary>
+	public sealed class OggDecodeStream : Stream
 	{
-		class DebugWriter : TextWriter
+		private class DebugWriter : TextWriter
 		{
 			public override Encoding Encoding
 			{
@@ -28,21 +31,31 @@ namespace OggDecoder
 			}
 		}
 
-		private Stream decodedStream;
+		private readonly Stream decodedStream;
 		private const int HEADER_SIZE = 36;
 
+		/// <summary>
+		/// Constructor.
+		/// </summary>
+		/// <param name="input">Input stream to OGG file data.</param>
+		/// <param name="skipWavHeader">Whether ot not to skip writing the WAV header.</param>
 		public OggDecodeStream(Stream input, bool skipWavHeader)
 		{
 			if (input == null)
 				throw new ArgumentNullException("input");
+
 			decodedStream = DecodeStream(input, skipWavHeader);
 		}
 
-		public OggDecodeStream(Stream input):this(input, false)
+		/// <summary>
+		/// Constructor. Assumes the WAV header is to be written.
+		/// </summary>
+		/// <param name="input">Input stream to OGG file data.</param>
+		public OggDecodeStream(Stream input) : this(input, false)
 		{
 		}
 
-		Stream DecodeStream(Stream input, bool skipWavHeader)
+		private Stream DecodeStream(Stream input, bool skipWavHeader)
 		{
 			int convsize=4096*2;
 			byte[] convbuffer=new byte[convsize]; // take 8k out of the data segment, not the stack
@@ -352,17 +365,18 @@ namespace OggDecoder
 				WriteHeader(output, (int)(output.Length - HEADER_SIZE), vi.rate, (ushort)16, (ushort)vi.channels);
 				output.Seek(0, SeekOrigin.Begin);
 			}
+
 			return output;
 		}
 
-		void WriteHeader(Stream stream, int length, int audioSampleRate, ushort audioBitsPerSample, ushort audioChannels)
+		private static void WriteHeader(Stream stream, int length, int audioSampleRate, ushort audioBitsPerSample, ushort audioChannels)
 		{
 			BinaryWriter bw = new BinaryWriter(stream);
 
-			bw.Write(new char[4] { 'R', 'I', 'F', 'F' });
+			bw.Write(new[] { 'R', 'I', 'F', 'F' });
 			int fileSize = HEADER_SIZE + length;
 			bw.Write(fileSize);
-			bw.Write(new char[8] { 'W', 'A', 'V', 'E', 'f', 'm', 't', ' ' });
+			bw.Write(new[] { 'W', 'A', 'V', 'E', 'f', 'm', 't', ' ' });
 			bw.Write((int)16);
 			bw.Write((short)1);
 			bw.Write((short)audioChannels);
@@ -371,7 +385,7 @@ namespace OggDecoder
 			bw.Write((short)((audioBitsPerSample * audioChannels) / 8));
 			bw.Write((short)audioBitsPerSample);
 
-			bw.Write(new char[4] { 'd', 'a', 't', 'a' });
+			bw.Write(new[] { 'd', 'a', 't', 'a' });
 			bw.Write(length);
 		}
 
