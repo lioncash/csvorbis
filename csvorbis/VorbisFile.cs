@@ -154,6 +154,7 @@ namespace csvorbis
 			{
 				bytes = 0;
 			}
+
 			return bytes;
 		}
 
@@ -167,7 +168,9 @@ namespace csvorbis
 
 		private int get_next_page(Page page, long boundary)
 		{
-			if (boundary > 0) boundary += offset;
+			if (boundary > 0)
+				boundary += offset;
+
 			while (true)
 			{
 				if (boundary > 0 && offset >= boundary)
@@ -176,6 +179,7 @@ namespace csvorbis
 				int more = oy.pageseek(page);
 				if (more < 0)
 				{
+					// Skipped n bytes.
 					offset -= more;
 				}
 				else
@@ -185,14 +189,15 @@ namespace csvorbis
 						if (boundary == 0)
 							return OV_FALSE;
 
-						//  if(get_data()<=0)return -1;
 						int ret = get_data();
 						if (ret == 0) return OV_EOF;
 						if (ret < 0) return OV_EREAD;
 					}
 					else
 					{
-						int ret = (int) offset; //!!!
+						// Got a page, Return the offse at the page beginning
+						// advance the internal offset past the page end.
+						int ret = (int) offset;
 						offset += more;
 						return ret;
 					}
@@ -202,7 +207,7 @@ namespace csvorbis
 
 		private int get_prev_page(Page page)
 		{
-			long begin = offset; //!!!
+			long begin = offset;
 			int ret;
 			int offst = - 1;
 			while (offst == -1)
@@ -212,7 +217,7 @@ namespace csvorbis
 					begin = 0;
 				seek_helper(begin);
 
-				while (offset < begin + CHUNKSIZE)
+				while (offset < begin+CHUNKSIZE)
 				{
 					ret = get_next_page(page, begin + CHUNKSIZE - offset);
 					if (ret == OV_EREAD)
@@ -235,8 +240,6 @@ namespace csvorbis
 			ret = get_next_page(page, CHUNKSIZE);
 			if (ret < 0)
 			{
-				//System.err.println("Missed page fencepost at end of logical bitstream Exiting");
-				//System.exit(1);
 				return OV_EFAULT;
 			}
 
@@ -306,11 +309,10 @@ namespace csvorbis
 		{
 			Page og = new Page();
 			Packet op = new Packet();
-			int ret;
 
 			if (og_ptr == null)
 			{
-				ret = get_next_page(og, CHUNKSIZE);
+				int ret = get_next_page(og, CHUNKSIZE);
 
 				if (ret == OV_EREAD)
 					return OV_EREAD;
@@ -344,21 +346,19 @@ namespace csvorbis
 					if (result == -1)
 					{
 						Console.Error.WriteLine("Corrupt header in logical bitstream.");
-						//goto bail_header;
 						vi.clear();
 						vc.clear();
 						os.clear();
-						return -1;
+						return OV_EBADHEADER;
 					}
 
 					if (vi.synthesis_headerin(vc, op) != 0)
 					{
 						Console.Error.WriteLine("Illegal header in logical bitstream.");
-						//goto bail_header;
 						vi.clear();
 						vc.clear();
 						os.clear();
-						return -1;
+						return OV_EBADHEADER;
 					}
 					i++;
 				}
@@ -368,11 +368,10 @@ namespace csvorbis
 					if (get_next_page(og_ptr, 1) < 0)
 					{
 						Console.Error.WriteLine("Missing header in logical bitstream.");
-						//goto bail_header;
 						vi.clear();
 						vc.clear();
 						os.clear();
-						return -1;
+						return OV_EBADHEADER;
 					}
 				}
 			}
@@ -407,7 +406,7 @@ namespace csvorbis
 				{
 					// seek to the location of the initial header
 					seek_helper(offsets[i]); //!!!
-					if (fetch_headers(vi[i], vc[i], null, null) == -1)
+					if (fetch_headers(vi[i], vc[i], null, null) == OV_EBADHEADER)
 					{
 						Console.Error.WriteLine("Error opening logical bitstream #" + (i + 1) + "\n");
 						dataoffsets[i] = -1;
@@ -474,7 +473,7 @@ namespace csvorbis
 			int dataoffset = (int) offset; //!!
 			os.clear();
 
-			if(ret == -1)
+			if(ret == OV_EBADHEADER)
 				return -1;
 
 			// we can seek, so set out learning all about this file
@@ -513,7 +512,6 @@ namespace csvorbis
 
 		private int open_nonseekable()
 		{
-			//System.err.println("open_nonseekable");
 			// we cannot seek. Set up a 'single' (current) logical bitstream entry
 			links=1;
 			vi=new Info[links]; vi[0]=new Info(); // ??
@@ -1048,14 +1046,13 @@ namespace csvorbis
 		{
 			// don't dump machine if we can't seek
 			if (!skable)
-				return -1;
+				return OV_ENOSEEK;
 
 			if (pos < 0 || pos > offsets[links])
 			{
-				//goto seek_error;
 				pcm_offset = -1;
 				decode_clear();
-				return -1;
+				return OV_EBADLINK;
 			}
 
 			// clear out decoding machine state
@@ -1105,7 +1102,7 @@ namespace csvorbis
 						//goto seek_error;
 						pcm_offset = -1;
 						decode_clear();
-						return -1;
+						return OV_EBADLINK;
 
 					default:
 						// continue processing packets
@@ -1129,20 +1126,24 @@ namespace csvorbis
 			int link = -1;
 			long total = pcm_total(-1);
 
-			if (!skable) return (-1); // don't dump machine if we can't seek
+			// don't dump machine if we can't seek
+			if (!skable)
+				return OV_ENOSEEK;
+
 			if (pos < 0 || pos > total)
 			{
-				//goto seek_error;
 				pcm_offset = -1;
 				decode_clear();
-				return -1;
+				return OV_EINVAL;
 			}
 
 			// which bitstream section does this pcm offset occur in?
 			for (link = links - 1; link >= 0; link--)
 			{
 				total -= pcmlengths[link];
-				if (pos >= total) break;
+
+				if (pos >= total)
+					break;
 			}
 
 			// search within the logical bitstream for the page with the highest
@@ -1194,27 +1195,18 @@ namespace csvorbis
 				// found our page. seek to it (call raw_seek).
 				if (raw_seek(best) != 0)
 				{
-					//goto seek_error;
 					pcm_offset = -1;
 					decode_clear();
-					return -1;
+					return OV_EFAULT;
 				}
 			}
 
 			// verify result
-			if (pcm_offset >= pos)
+			if (pcm_offset >= pos || pos > pcm_total(-1))
 			{
-				//goto seek_error;
 				pcm_offset = -1;
 				decode_clear();
-				return -1;
-			}
-			if (pos > pcm_total(-1))
-			{
-				//goto seek_error;
-				pcm_offset = -1;
-				decode_clear();
-				return -1;
+				return OV_EFAULT;
 			}
 
 			// discard samples until we reach the desired position. Crossing a
@@ -1242,12 +1234,6 @@ namespace csvorbis
 			}
 
 			return 0;
-
-			// seek_error:
-			// dump machine so we're in a known state
-			//pcm_offset=-1;
-			//decode_clear();
-			//return -1;
 		}
 
 		/// <summary>
@@ -1266,14 +1252,13 @@ namespace csvorbis
 
 			// don't dump machine if we can't seek
 			if (!skable)
-				return -1;
+				return OV_ENOSEEK;
 
 			if (seconds < 0 || seconds > time_tot)
 			{
-				//goto seek_error;
 				pcm_offset = -1;
 				decode_clear();
-				return -1;
+				return OV_EINVAL;
 			}
 
 			// which bitstream section does this time offset occur in?
