@@ -28,6 +28,31 @@ using csogg;
 
 namespace csvorbis 
 {
+	/// <summary>
+	/// A mapping contains a channel coupling description and a list of ÅfsubmapsÅf 
+	/// that bundle sets of channel vectors together for grouped encoding and decoding. 
+	/// These submaps are not references to external components; the submap list is internal
+	/// and specific to a mapping.
+	/// 
+	/// <remarks>
+	/// A ÅfsubmapÅf is a configuration/grouping that applies to a subset of floor and residue vectors
+	/// within a mapping. The submap functions as a last layer of indirection such that specific special
+	/// floor or residue settings can be applied not only to all the vectors in a given mode, but also
+	/// specific vectors in a specific mode. Each submap specifies the proper floor and residue instance
+	/// number to use for decoding that submapÅfs spectral floor and spectral residue vectors.
+	/// </remarks>
+	/// 
+	/// <example>
+	/// Assume a Vorbis stream that contains six channels in the standard 5.1 format.
+	/// The sixth channel, as is normal in 5.1, is bass only.
+	/// Therefore it would be wasteful to encode a full-spectrum version of it as with the other channels.
+	/// The submapping mechanism can be used to apply a full range floor and residue encoding to
+	/// channels 0 through 4, and a bass-only representation to the bass channel, thus saving space.
+	/// 
+	/// In this example, channels 0-4 belong to submap 0 (which indicates use of a full-range floor)
+	/// and channel 5 belongs to submap 1, which uses a bass-only representation.
+	/// </example>
+	/// </summary>
 	internal abstract class FuncMapping
 	{
 		public static FuncMapping[] mapping_P = {new Mapping0()};

@@ -28,42 +28,68 @@ using csogg;
 
 namespace csvorbis 
 {
-	public class Info
+	/// <summary>
+	/// Contains basic information about the audio in a Vorbis bitstream.
+	/// </summary>
+	public sealed class Info
 	{
-		private const int OV_EBADPACKET=-136;
-		private const int OV_ENOTAUDIO=-135;
-		private const string _vorbis="vorbis";
-		private const int VI_TIMEB=1;
-		private const int VI_FLOORB=2;
-		private const int VI_RESB=3;
-		private const int VI_MAPB=1;
-		private const int VI_WINDOWB=1;
+		private const string _vorbis = "vorbis";
+		private const int VI_TIMEB   = 1;
+		private const int VI_FLOORB  = 2;
+		private const int VI_RESB    = 3;
+		private const int VI_MAPB    = 1;
+		private const int VI_WINDOWB = 1;
 
-		public int version;
-		public int channels;
-		public int rate;
+		/// <summary>
+		/// Vorbis encoder version used to create this bitstream.
+		/// </summary>
+		public int Version
+		{
+			get;
+			private set;
+		}
+
+		/// <summary>
+		/// Number of channels in this bitstream.
+		/// </summary>
+		public int Channels
+		{
+			get;
+			private set;
+		}
+
+		/// <summary>
+		/// Sampling rate of the bitstream.
+		/// </summary>
+		public int SamplingRate
+		{
+			get;
+			private set;
+		}
 
 		// The below bitrate declarations are *hints*.
 		// Combinations of the three values carry the following implications:
-		//     
-		// all three set to the same value: 
-		// implies a fixed rate bitstream
-		// only nominal set: 
-		// implies a VBR stream that averages the nominal bitrate.  No hard 
-		// upper/lower limit
-		// upper and or lower set: 
-		// implies a VBR bitstream that obeys the bitrate limits. nominal 
-		// may also be set to give a nominal rate.
-		// none set:
-		//  the coder does not care to speculate.
-
+		//
+		// - All three set to the same value: 
+		//     Implies a fixed rate bitstream
+		//
+		// - Only nominal set: 
+		//     Implies a VBR stream that averages the nominal bitrate.  No hard 
+		//     upper/lower limit
+		//
+		// - Upper and or lower set: 
+		//     Implies a VBR bitstream that obeys the bitrate limits. nominal 
+		//     may also be set to give a nominal rate.
+		//
+		// - None set:
+		//     The coder does not care to speculate.
+		//
 		internal int bitrate_upper;
-		internal int bitrate_nominal;
+		internal int bitrate_nominal; 
 		internal int bitrate_lower;
-  
+
 		// Vorbis supports only short and long blocks, but allows the
 		// encoder to choose the sizes
-
 		internal int[] blocksizes=new int[2];
 
 		// modes are the primary means of supporting on-the-fly different
@@ -105,7 +131,7 @@ namespace csvorbis
 		// used by synthesis, which has a full, alloced vi
 		public void init()
 		{
-			rate = 0;
+			SamplingRate = 0;
 		}
 
 		public void clear()
@@ -169,12 +195,12 @@ namespace csvorbis
 		// Header packing/unpacking
 		internal int unpack_info(csBuffer opb)
 		{
-			version = opb.read(32);
-			if (version != 0)
+			Version = opb.read(32);
+			if (Version != 0)
 				return -1;
 
-			channels = opb.read(8);
-			rate = opb.read(32);
+			Channels = opb.read(8);
+			SamplingRate = opb.read(32);
 
 			bitrate_upper = opb.read(32);
 			bitrate_nominal = opb.read(32);
@@ -183,8 +209,8 @@ namespace csvorbis
 			blocksizes[0] = 1 << opb.read(4);
 			blocksizes[1] = 1 << opb.read(4);
 
-			if ((rate < 1) ||
-				(channels < 1) ||
+			if ((SamplingRate < 1) ||
+				(Channels < 1) ||
 				(blocksizes[0] < 8) ||
 				(blocksizes[1] < blocksizes[0]) ||
 				(opb.read(1) != 1))
@@ -200,7 +226,7 @@ namespace csvorbis
 		// all of the real encoding details are here.  The modes, books, everything
 		internal int unpack_books(csBuffer opb)
 		{
-			//d* codebooks
+			// codebooks
 			books = opb.read(8) + 1;
 
 			if (book_param == null || book_param.Length != books)
@@ -375,7 +401,7 @@ namespace csvorbis
 							// Not the initial packet
 							return -1;
 						}
-						if (rate != 0)
+						if (SamplingRate != 0)
 						{
 							// previously initialized info header
 							return -1;
@@ -383,7 +409,7 @@ namespace csvorbis
 						return unpack_info(opb);
 
 					case 0x03: // least significant *bit* is read first
-						if (rate == 0)
+						if (SamplingRate == 0)
 						{
 							// um... we didn't get the initial header
 							return -1;
@@ -391,7 +417,7 @@ namespace csvorbis
 						return vc.unpack(opb);
 
 					case 0x05: // least significant *bit* is read first
-						if (rate == 0 || vc.vendor == null)
+						if (SamplingRate == 0 || vc.getVendor() == null)
 						{
 							// um... we didn;t get the initial header or comments yet
 							return -1;
@@ -418,8 +444,8 @@ namespace csvorbis
 
 			// basic information about the stream
 			opb.write(0x00,32);
-			opb.write(channels,8);
-			opb.write(rate,32);
+			opb.write(Channels,8);
+			opb.write(SamplingRate,32);
 
 			opb.write(bitrate_upper,32);
 			opb.write(bitrate_nominal,32);
@@ -508,7 +534,7 @@ namespace csvorbis
 			if (opb.read(1) != 0)
 			{
 				/* Oops.  This is not an audio data packet */
-				return OV_ENOTAUDIO;
+				return VorbisFile.OV_ENOTAUDIO;
 			}
 
 			/* read our mode and pre/post windowsize */
@@ -516,17 +542,16 @@ namespace csvorbis
 			int mode = opb.read(modebits);
 
 			if (mode == -1)
-				return OV_EBADPACKET;
+				return VorbisFile.OV_EBADPACKET;
 
 			return (blocksizes[mode_param[mode].blockflag]);
 		}
 
-
 		public override string ToString()
 		{
-			return "version:" + version +
-					", channels:" + channels +
-					", rate:" + rate +
+			return "version:" + Version +
+					", channels:" + Channels +
+					", Sampling rate:" + SamplingRate +
 					", bitrate:" + bitrate_upper + "," +
 					bitrate_nominal + "," +
 					bitrate_lower;

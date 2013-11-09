@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Diagnostics;
 using System.Text;
@@ -210,17 +211,17 @@ namespace OggDecoder
 				// Throw the comments plus a few lines about the bitstream we're
 				// decoding
 				{
-					byte[][] ptr = vc.user_comments;
-					for (int j = 0; j < vc.user_comments.Length; j++)
+					List<String> comments = vc.getAllComments();
+					foreach (string comment in comments)
 					{
-						if (ptr[j] == null) break;
-						s_err.WriteLine(vc.getComment(j));
+						s_err.WriteLine(comment);
 					}
-					s_err.WriteLine("\nBitstream is " + vi.channels + " channel, " + vi.rate + "Hz");
+
+					s_err.WriteLine("\nBitstream is " + vi.Channels + " channel(s), " + vi.SamplingRate + "Hz");
 					s_err.WriteLine("Encoded by: " + vc.getVendor() + "\n");
 				}
 
-				convsize = 4096 / vi.channels;
+				convsize = 4096 / vi.Channels;
 
 				// OK, got and parsed all three headers. Initialize the Vorbis
 				//  packet->PCM decoder.
@@ -233,7 +234,7 @@ namespace OggDecoder
 				// for vd here
 
 				float[][][] _pcm = new float[1][][];
-				int[] _index = new int[vi.channels];
+				int[] _index = new int[vi.Channels];
 				// The rest is just a straight decode loop until end of stream
 				while (eos == 0)
 				{
@@ -281,7 +282,7 @@ namespace OggDecoder
 
 										// convert floats to 16 bit signed ints (host order) and
 										// interleave
-										for (i = 0; i < vi.channels; i++)
+										for (i = 0; i < vi.Channels; i++)
 										{
 											int ptr = i * 2;
 											//int ptr=i;
@@ -305,7 +306,7 @@ namespace OggDecoder
 												if (val < 0) val = val | 0x8000;
 												convbuffer[ptr] = (byte)(val);
 												convbuffer[ptr + 1] = (byte)((uint)val >> 8);
-												ptr += 2 * (vi.channels);
+												ptr += 2 * (vi.Channels);
 											}
 										}
 
@@ -314,7 +315,7 @@ namespace OggDecoder
 											//s_err.WriteLine("Clipping in frame "+vd.sequence);
 										}
 
-										output.Write(convbuffer, 0, 2 * vi.channels * bout);
+										output.Write(convbuffer, 0, 2 * vi.Channels * bout);
 
 										vd.synthesis_read(bout); // tell libvorbis how
 										// many samples we
@@ -322,9 +323,12 @@ namespace OggDecoder
 									}
 								}
 							}
-							if (og.eos() != 0) eos = 1;
+
+							if (og.eos() != 0)
+								eos = 1;
 						}
 					}
+
 					if (eos == 0)
 					{
 						index = oy.buffer(4096);
@@ -338,7 +342,8 @@ namespace OggDecoder
 							s_err.WriteLine(e);
 						}
 						oy.wrote(bytes);
-						if (bytes == 0) eos = 1;
+						if (bytes == 0)
+							eos = 1;
 					}
 				}
 
@@ -362,7 +367,7 @@ namespace OggDecoder
 			output.Seek(0, SeekOrigin.Begin);
 			if (!skipWavHeader)
 			{
-				WriteHeader(output, (int)(output.Length - HEADER_SIZE), vi.rate, (ushort)16, (ushort)vi.channels);
+				WriteHeader(output, (int)(output.Length - HEADER_SIZE), vi.SamplingRate, (ushort)16, (ushort)vi.Channels);
 				output.Seek(0, SeekOrigin.Begin);
 			}
 

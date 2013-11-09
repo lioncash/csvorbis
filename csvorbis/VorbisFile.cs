@@ -45,21 +45,21 @@ namespace csvorbis
 		private const int SEEK_CUR = 1;
 		private const int SEEK_END = 2;
 
-		private const int OV_FALSE = -1;
-		private const int OV_EOF = -2;
-		private const int OV_HOLE = -3;
-
-		internal const int OV_EREAD = -128;
-		internal const int OV_EFAULT = -129;
-		internal const int OV_EIMPL = -130;
-		internal const int OV_EINVAL = -131;
-		internal const int OV_ENOTVORBIS = -132;
-		internal const int OV_EBADHEADER = -133;
-		internal const int OV_EVERSION = -134;
-		internal const int OV_ENOTAUDIO = -135;
-		internal const int OV_EBADPACKET = -136;
-		internal const int OV_EBADLINK = -137;
-		internal const int OV_ENOSEEK = -138;
+		// Status and error codes
+		internal const int OV_FALSE      = -1;   // Call returned a 'false' status.
+		internal const int OV_EOF        = -2;   // End Of File reached.
+		internal const int OV_HOLE       = -3;   // there was an interruption in the data (one of: garbage between pages, loss of sync followed by recapture, or a corrupt page).
+		internal const int OV_EREAD      = -128; // A read from media returned an error.
+		internal const int OV_EFAULT     = -129; // Internal logic fault; indicates a bug or heap/stack corruption.
+		internal const int OV_EIMPL      = -130; // The bitstream makes use of a feature not implemented in this library version.
+		internal const int OV_EINVAL     = -131; // Invalid argument value.
+		internal const int OV_ENOTVORBIS = -132; // Bitstream/page/packet is not Vorbis data.
+		internal const int OV_EBADHEADER = -133; // Invalid Vorbis bitstream header.
+		internal const int OV_EVERSION   = -134; // Vorbis version mismatch.
+		internal const int OV_ENOTAUDIO  = -135; // Packet data submitted to vorbis_synthesis is not audio data.
+		internal const int OV_EBADPACKET = -136; // Invalid packet submitted to vorbis_synthesis.
+		internal const int OV_EBADLINK   = -137; // Invalid stream section supplied to csvorbis, or the requested link is corrupt.
+		internal const int OV_ENOSEEK    = -138; // Bitstream is not seekable.
 
 		private FileStream datasource;
 		private bool skable = false;
@@ -924,7 +924,7 @@ namespace csvorbis
 				return -1;
 
 			int _link = (skable ? current_link : 0);
-			int ret = (int) (bittrack/samptrack*vi[_link].rate + .5);
+			int ret = (int) (bittrack/samptrack*vi[_link].SamplingRate + .5);
 			bittrack = 0.0f;
 			samptrack = 0.0f;
 			return ret;
@@ -1029,7 +1029,7 @@ namespace csvorbis
 			}
 			else
 			{
-				return ((float) (pcmlengths[i])/vi[i].rate);
+				return ((float) (pcmlengths[i])/vi[i].SamplingRate);
 			}
 		}
 
@@ -1215,7 +1215,7 @@ namespace csvorbis
 			{
 				int target = (int) (pos - pcm_offset);
 				float[][][] pcm = new float[1][][];
-				int[] index = new int[getInfo(-1).channels];
+				int[] index = new int[getInfo(-1).Channels];
 				int samples = vd.synthesis_pcmout(pcm, index);
 
 				if (samples > target)
@@ -1273,7 +1273,7 @@ namespace csvorbis
 
 			// enough information to convert time offset to pcm offset
 			{
-				long target = (long) (pcm_tot + (seconds - time_tot)*vi[link].rate);
+				long target = (long) (pcm_tot + (seconds - time_tot)*vi[link].SamplingRate);
 				return pcm_seek(target);
 			}
 		}
@@ -1325,7 +1325,7 @@ namespace csvorbis
 				}
 			}
 
-			return ((float) time_tot + (float) (pcm_offset - pcm_tot)/vi[link].rate);
+			return ((float) time_tot + (float) (pcm_offset - pcm_tot)/vi[link].SamplingRate);
 		}
 
 		/// <summary>
@@ -1438,13 +1438,13 @@ namespace csvorbis
 				if (decode_ready)
 				{
 					float[][][] _pcm = new float[1][][];
-					int[] _index = new int[getInfo(-1).channels];
+					int[] _index = new int[getInfo(-1).Channels];
 					int samples = vd.synthesis_pcmout(_pcm, _index);
 					float[][] pcm = _pcm[0];
 					if (samples != 0)
 					{
 						// yay! proceed to pack data into the byte buffer
-						int channels = getInfo(-1).channels;
+						int channels = getInfo(-1).Channels;
 						int bytespersample = word*channels;
 						if (samples > length/bytespersample) samples = length/bytespersample;
 

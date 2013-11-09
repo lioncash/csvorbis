@@ -28,6 +28,11 @@ using csogg;
 
 namespace csvorbis 
 {
+	/// <summary>
+	/// Floor encoding zero. Not generally of modern use.
+	/// 
+	/// Floor 0 uses a packed LSP representation on a dB amplitude scale and Bark frequency scale. 
+	/// </summary>
 	internal class Floor0 : FuncFloor
 	{
 		public override void pack(object i, csBuffer opb)

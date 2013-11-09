@@ -28,6 +28,17 @@ using csogg;
 
 namespace csvorbis 
 {
+	/// <summary>
+	/// The spectral residue is the fine structure of the audio spectrum once the
+	/// floor curve has been subtracted out. In simplest terms, it is coded in the
+	/// bitstream using cascaded (multi-pass) vector quantization according to one
+	/// of three specific packing/coding algorithms numbered 0 through 2.
+	/// 
+	/// The packing algorithm details are configured by residue instance.
+	/// As with the floor components, the final VQ/entropy encoding is provided by
+	/// external codebook instances and each residue instance may choose from any and
+	/// all available codebooks.
+	/// </summary>
 	internal abstract class FuncResidue
 	{
 		public static FuncResidue[] residue_P =

@@ -24,25 +24,25 @@
 
 
 using System;
+using System.Collections.Generic;
 using System.Text;
 using csogg;
 
 namespace csvorbis 
 {
-	// the comments are not part of vorbis_info so that vorbis_info can be
-	// static storage
+	/// <summary>
+	/// Defines an Ogg Vorbis comment.
+	/// </summary>
 	public class Comment
 	{
 		private const string _vorbis = "vorbis";
 
-		private const int OV_EIMPL = -130;
-
 		// unlimited user comment fields.  libvorbis writes 'libvorbis'
 		// whatever vendor is set to in encode
-		public byte[][] user_comments;
-		public int[] comment_lengths; 
-		public int comments;
-		public byte[] vendor;
+		private byte[][] user_comments;
+		private int[] comment_lengths; 
+		private int comments;
+		private byte[] vendor;
 
 		public void init()
 		{
@@ -91,12 +91,10 @@ namespace csvorbis
 		}
 
 		// This is more or less the same as strncasecmp - but that doesn't exist
-		// * everywhere, and this is a fairly trivial function, so we include it
-		static bool tagcompare(byte[] s1, byte[] s2, int n)
+		// everywhere, and this is a fairly trivial function, so we include it
+		private static bool tagcompare(byte[] s1, byte[] s2, int n)
 		{
-			int c = 0;
-
-			while (c < n)
+			for (int c = 0; c < n; c++)
 			{
 				byte u1 = s1[c];
 				byte u2 = s2[c];
@@ -111,8 +109,6 @@ namespace csvorbis
 				{
 					return false;
 				}
-
-				c++;
 			}
 
 			return true;
@@ -263,7 +259,7 @@ namespace csvorbis
 			opb.writeinit();
 
 			if (pack(opb) != 0)
-				return OV_EIMPL;
+				return VorbisFile.OV_EIMPL;
 
 			op.packet_base = new byte[opb.bytes()];
 			op.packet = 0;
@@ -286,28 +282,47 @@ namespace csvorbis
 
 		public string getVendor()
 		{
-			Encoding AE = Encoding.UTF8;
-			char[] vendor_uni = AE.GetChars(vendor);
-			return new string(vendor_uni);
+			if (vendor == null)
+				return null;
+
+			return Encoding.UTF8.GetString(vendor);
 		}
 
 		public string getComment(int i)
 		{
-			Encoding AE = Encoding.UTF8;
 			if (comments <= i)
 				return null;
 			
-			char[] user_comments_uni = AE.GetChars(user_comments[i]);
-			return new string(user_comments_uni);
+			return Encoding.UTF8.GetString(user_comments[i]);
+		}
+
+		public List<String> getAllComments()
+		{
+			List<String> comments = new List<string>();
+
+			// Empty list if no comments are initialized.
+			if (user_comments == null)
+				return comments;
+
+			// Convert all of the comments to strings.
+			foreach (byte[] userComment in user_comments)
+			{
+				if (userComment != null)
+				{
+					comments.Add(Encoding.UTF8.GetString(userComment));
+				}
+			}
+
+			return comments;
 		}
 
 		public override string ToString()
 		{
 			Encoding AE = Encoding.UTF8;
-			string long_string = "Vendor: " + new string(AE.GetChars(vendor));
+			string long_string = "Vendor: " + AE.GetString(vendor);
 
 			for (int i = 0; i < comments; i++)
-				long_string = long_string + "\nComment: " + new string(AE.GetChars(user_comments[i]));
+				long_string = long_string + "\nComment: " + AE.GetString(user_comments[i]);
 
 			long_string = long_string + "\n";
 

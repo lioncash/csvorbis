@@ -71,7 +71,7 @@ namespace csvorbis
 				// ??
 			}
 
-			looks.ch = vi.channels;
+			looks.ch = vi.Channels;
 
 			return looks;
 		}
@@ -103,8 +103,8 @@ namespace csvorbis
 				opb.write(info.coupling_steps - 1, 8);
 				for (int i = 0; i < info.coupling_steps; i++)
 				{
-					opb.write(info.coupling_mag[i], Util.ilog2(vi.channels));
-					opb.write(info.coupling_ang[i], Util.ilog2(vi.channels));
+					opb.write(info.coupling_mag[i], Util.ilog2(vi.Channels));
+					opb.write(info.coupling_ang[i], Util.ilog2(vi.Channels));
 				}
 			}
 			else
@@ -117,7 +117,7 @@ namespace csvorbis
 			// We don't write the channel submappings if we only have one...
 			if (info.submaps > 1)
 			{
-				for (int i = 0; i < vi.channels; i++)
+				for (int i = 0; i < vi.Channels; i++)
 				{
 					opb.write(info.chmuxlist[i], 4);
 				}
@@ -151,14 +151,14 @@ namespace csvorbis
 
 				for (int i = 0; i < info.coupling_steps; i++)
 				{
-					int testM = info.coupling_mag[i] = opb.read(Util.ilog2(vi.channels));
-					int testA = info.coupling_ang[i] = opb.read(Util.ilog2(vi.channels));
+					int testM = info.coupling_mag[i] = opb.read(Util.ilog2(vi.Channels));
+					int testA = info.coupling_ang[i] = opb.read(Util.ilog2(vi.Channels));
 
 					if (testM < 0 ||
-					    testA < 0 ||
-					    testM == testA ||
-					    testM >= vi.channels ||
-					    testA >= vi.channels)
+						testA < 0 ||
+						testM == testA ||
+						testM >= vi.Channels ||
+						testA >= vi.Channels)
 					{
 						info.free();
 						return null;
@@ -175,7 +175,7 @@ namespace csvorbis
 
 			if (info.submaps > 1)
 			{
-				for (int i = 0; i < vi.channels; i++)
+				for (int i = 0; i < vi.Channels; i++)
 				{
 					info.chmuxlist[i] = opb.read(4);
 					if (info.chmuxlist[i] >= info.submaps)
@@ -231,14 +231,14 @@ namespace csvorbis
 				int n = vb.pcmend = vi.blocksizes[vb.W];
 
 				float[] window = vd.wnd[vb.W][vb.lW][vb.nW][mode.windowtype];
-				// float[][] pcmbundle=new float[vi.channels][];
-				// int[] nonzero=new int[vi.channels];
-				if (pcmbundle == null || pcmbundle.Length < vi.channels)
+				// float[][] pcmbundle=new float[vi.Channels][];
+				// int[] nonzero=new int[vi.Channels];
+				if (pcmbundle == null || pcmbundle.Length < vi.Channels)
 				{
-					pcmbundle = new float[vi.channels][];
-					nonzero = new int[vi.channels];
-					zerobundle = new int[vi.channels];
-					floormemo = new Object[vi.channels];
+					pcmbundle = new float[vi.Channels][];
+					nonzero = new int[vi.Channels];
+					zerobundle = new int[vi.Channels];
+					floormemo = new Object[vi.Channels];
 				}
 
 				// time domain information decode (note that applying the
@@ -247,7 +247,7 @@ namespace csvorbis
 				// NOT IMPLEMENTED
 
 				// recover the spectral envelope; store it in the PCM vector for now 
-				for (int i = 0; i < vi.channels; i++)
+				for (int i = 0; i < vi.Channels; i++)
 				{
 					float[] pcm = vb.pcm[i];
 					int submap = info.chmuxlist[i];
@@ -285,7 +285,7 @@ namespace csvorbis
 				for (int i = 0; i < info.submaps; i++)
 				{
 					int ch_in_bundle = 0;
-					for (int j = 0; j < vi.channels; j++)
+					for (int j = 0; j < vi.Channels; j++)
 					{
 						if (info.chmuxlist[j] == i)
 						{
@@ -347,7 +347,7 @@ namespace csvorbis
 
 				//    /* compute and apply spectral envelope */
 
-				for (int i = 0; i < vi.channels; i++)
+				for (int i = 0; i < vi.Channels; i++)
 				{
 					float[] pcm = vb.pcm[i];
 					int submap = info.chmuxlist[i];
@@ -357,7 +357,7 @@ namespace csvorbis
 				// transform the PCM data; takes PCM vector, vb; modifies PCM vector
 				// only MDCT right now....
 
-				for (int i = 0; i < vi.channels; i++)
+				for (int i = 0; i < vi.Channels; i++)
 				{
 					float[] pcm = vb.pcm[i];
 					//_analysis_output("out",seq+i,pcm,n/2,0,0);
@@ -368,7 +368,7 @@ namespace csvorbis
 				// NOT IMPLEMENTED
 
 				// window the data
-				for (int i = 0; i < vi.channels; i++)
+				for (int i = 0; i < vi.Channels; i++)
 				{
 					float[] pcm = vb.pcm[i];
 					if (nonzero[i] != 0)

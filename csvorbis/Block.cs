@@ -26,7 +26,16 @@ using csogg;
 
 namespace csvorbis 
 {
-	public class Block
+	/// <summary>
+	/// Represents the data for a single block of audio.
+	/// 
+	/// <remarks>
+	/// One block translates to one codec packet.
+	/// <para>The encoding process consists of splitting the audio into blocks and encoding the blocks into packets.</para>
+	/// <para>The decoding process consists of decoding the packets into blocks and reassembling the audio from the blocks.</para>
+	/// </remarks>
+	/// </summary>
+	public sealed class Block
 	{
 		// Necessary stream state for linking to the framing abstraction
 		internal float[][] pcm = new float[0][]; // This is a pointer into local storage
@@ -121,11 +130,11 @@ namespace csvorbis
 
 			// Alloc PCM passback storage
 			pcmend = vi.blocksizes[W];
-			if (pcm.Length < vi.channels)
+			if (pcm.Length < vi.Channels)
 			{
-				pcm = new float[vi.channels][];
+				pcm = new float[vi.Channels][];
 			}
-			for (int i = 0; i < vi.channels; i++)
+			for (int i = 0; i < vi.Channels; i++)
 			{
 				if (pcm[i] == null || pcm[i].Length < pcmend)
 				{

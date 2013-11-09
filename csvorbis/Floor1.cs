@@ -28,6 +28,13 @@ using csogg;
 
 namespace csvorbis 
 {
+	/// <summary>
+	/// Floor encoding one.
+	/// 
+	/// Floor 1 represents the curve as a piecewise linear interpolated representation on a dB amplitude scale and linear frequency scale. encoding/decoding.
+	/// Floor 1 provides more stable inter-frame behavior than Floor 0, and so is the preferred choice in all coupled-stereo and high bitrate modes.
+	/// Floor 1 is also considerably less expensive to decode than floor 0.
+	/// </summary>
 	internal class Floor1 : FuncFloor
 	{
 		//static int floor1_rangedb=140;

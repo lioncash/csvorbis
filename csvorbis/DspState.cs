@@ -190,8 +190,8 @@ namespace csvorbis
 			pcm_storage = 8192; // we'll assume later that we have
 			// a minimum of twice the blocksize of
 			// accumulated samples in analysis
-			pcm = new float[vi.channels][];
-			for (int i = 0; i < vi.channels; i++)
+			pcm = new float[vi.Channels][];
+			for (int i = 0; i < vi.Channels; i++)
 			{
 				pcm[i] = new float[pcm_storage];
 			}
@@ -263,7 +263,7 @@ namespace csvorbis
 				pcm_returned -= shiftPCM;
 				if (shiftPCM != 0)
 				{
-					for (int i = 0; i < vi.channels; i++)
+					for (int i = 0; i < vi.Channels; i++)
 					{
 						Array.Copy(pcm[i], shiftPCM, pcm[i], 0, pcm_current);
 					}
@@ -295,7 +295,7 @@ namespace csvorbis
 			{
 				// expand the storage
 				pcm_storage = endW + vi.blocksizes[1];
-				for (int i = 0; i < vi.channels; i++)
+				for (int i = 0; i < vi.Channels; i++)
 				{
 					float[] foo = new float[pcm_storage];
 					Array.Copy(pcm[i], 0, foo, 0, pcm[i].Length);
@@ -316,7 +316,7 @@ namespace csvorbis
 					break;
 			}
 
-			for (int j = 0; j < vi.channels; j++)
+			for (int j = 0; j < vi.Channels; j++)
 			{
 				int _pcm = beginW;
 				// the overlap/add section
@@ -376,7 +376,7 @@ namespace csvorbis
 			{
 				if (_pcm != null)
 				{
-					for (int i = 0; i < vi.channels; i++)
+					for (int i = 0; i < vi.Channels; i++)
 					{
 						index[i] = pcm_returned;
 					}

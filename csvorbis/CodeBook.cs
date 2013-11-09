@@ -27,7 +27,21 @@ using csogg;
 
 namespace csvorbis 
 {
-	class CodeBook
+	/// <summary>
+	/// Codebooks are a self-contained abstraction that perform entropy decoding and,
+	/// optionally, use the entropy-decoded integer value as an offset into an index of
+	/// output value vectors, returning the indicated vector of values.
+	/// <remarks>
+	/// The entropy coding in a Vorbis I codebook is provided by a standard Huffman
+	/// binary tree representation. This tree is tightly packed using one of several
+	/// methods, depending on whether codeword lengths are ordered or unordered, or the tree is sparse.
+	/// 
+	/// The codebook vector index is similarly packed according to index characteristic.
+	/// Most commonly, the vector index is encoded as a single list of values of possible
+	/// values that are then permuted into a list of n-dimensional rows (lattice VQ).
+	/// </remarks>
+	/// </summary>
+	internal class CodeBook
 	{
 		internal int dim;            // codebook dimensions (elements per vector)
 		internal int entries;        // codebook entries
