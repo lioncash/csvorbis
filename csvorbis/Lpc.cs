@@ -30,8 +30,8 @@ namespace csvorbis
 	{
 		private readonly Drft fft = new Drft();
 
-		int ln;
-		int m;
+		private int ln;
+		private int m;
 
 		// Autocorrelation LPC coeff generation algorithm invented by
 		// N. Levinson in 1947, modified by J. Durbin in 1959.

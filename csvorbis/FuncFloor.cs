@@ -29,12 +29,12 @@ using csogg;
 namespace csvorbis 
 {
 	/// <summary>
-	/// Vorbis encodes a spectral ÅffloorÅf vector for each PCM channel.
+	/// Vorbis encodes a spectral 'floor' vector for each PCM channel.
 	/// This vector is a low-resolution representation of the audio spectrum
 	/// for the given channel in the current frame, generally used akin to a
 	/// whitening filter.
 	/// 
-	/// It is named a ÅffloorÅf because the Xiph.Org reference encoder has historically
+	/// It is named a 'floor' because the Xiph.Org reference encoder has historically
 	/// used it as a unit-baseline for spectral resolution.
 	/// 
 	/// <remarks>

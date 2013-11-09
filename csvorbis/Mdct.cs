@@ -34,13 +34,13 @@ namespace csvorbis
 		//static private float cPI2_8=0.70710678118654752441f;
 		//static private float cPI1_8=0.92387953251128675613f;
 
-		int n;
-		int log2n;
+		private int n;
+		private int log2n;
 
-		float[] trig;
-		int[] bitrev;
+		private float[] trig;
+		private int[] bitrev;
 
-		float scale;
+		private float scale;
 
 		internal void init(int n)
 		{

@@ -48,7 +48,7 @@ namespace csvorbis
 		// Status and error codes
 		internal const int OV_FALSE      = -1;   // Call returned a 'false' status.
 		internal const int OV_EOF        = -2;   // End Of File reached.
-		internal const int OV_HOLE       = -3;   // there was an interruption in the data (one of: garbage between pages, loss of sync followed by recapture, or a corrupt page).
+		internal const int OV_HOLE       = -3;   // There was an interruption in the data (one of: garbage between pages, loss of sync followed by recapture, or a corrupt page).
 		internal const int OV_EREAD      = -128; // A read from media returned an error.
 		internal const int OV_EFAULT     = -129; // Internal logic fault; indicates a bug or heap/stack corruption.
 		internal const int OV_EIMPL      = -130; // The bitstream makes use of a feature not implemented in this library version.

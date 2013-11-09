@@ -156,10 +156,10 @@ namespace csvorbis
 		{
 			int i = (int) (a*((float) (-(1 << FROMdB2_SHIFT))));
 			return (i < 0)
-				? 1.0f
-				: ((i >= (FROMdB_LOOKUP_SZ << FROMdB_SHIFT))
-					? 0.0f
-					: FROMdB_LOOKUP[(uint) i >> FROMdB_SHIFT]*FROMdB2_LOOKUP[i & FROMdB2_MASK]);
+						? 1.0f
+						: ((i >= (FROMdB_LOOKUP_SZ << FROMdB_SHIFT))
+							? 0.0f
+							: FROMdB_LOOKUP[(uint) i >> FROMdB_SHIFT]*FROMdB2_LOOKUP[i & FROMdB2_MASK]);
 		}
 
 	}

@@ -29,17 +29,17 @@ using csogg;
 namespace csvorbis 
 {
 	/// <summary>
-	/// A mapping contains a channel coupling description and a list of ÅfsubmapsÅf 
-	/// that bundle sets of channel vectors together for grouped encoding and decoding. 
+	/// A mapping contains a channel coupling description and a list of 'submaps'
+	/// that bundle sets of channel vectors together for grouped encoding and decoding.
 	/// These submaps are not references to external components; the submap list is internal
 	/// and specific to a mapping.
 	/// 
 	/// <remarks>
-	/// A ÅfsubmapÅf is a configuration/grouping that applies to a subset of floor and residue vectors
+	/// A 'submap' is a configuration/grouping that applies to a subset of floor and residue vectors
 	/// within a mapping. The submap functions as a last layer of indirection such that specific special
 	/// floor or residue settings can be applied not only to all the vectors in a given mode, but also
 	/// specific vectors in a specific mode. Each submap specifies the proper floor and residue instance
-	/// number to use for decoding that submapÅfs spectral floor and spectral residue vectors.
+	/// number to use for decoding that submap's spectral floor and spectral residue vectors.
 	/// </remarks>
 	/// 
 	/// <example>
