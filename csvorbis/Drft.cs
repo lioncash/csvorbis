@@ -27,6 +27,19 @@ using System;
 
 namespace csvorbis 
 {
+	/// <summary>
+	/// *Unnormalized* FFT transform
+	/// </summary>
+	/// <remarks>
+	/// FFT implementation from OggSquish, minus cosine transforms,
+	/// minus all but radix 2/4 case.  In Vorbis we only need this
+	/// cut-down version.
+	/// 
+	/// Note that the packing is a little strange; rather than the FFT r/i
+	/// packing following R_0, I_n, R_1, I_1, R_2, I_2 ... R_n-1, I_n-1,
+	/// it follows R_0, R_1, I_1, R_2, I_2 ... R_n-1, I_n-1, I_n like the
+	/// FORTRAN version
+	/// </remarks>
 	internal class Drft
 	{
 		private int n;
