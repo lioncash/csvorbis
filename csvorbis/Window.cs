@@ -2096,7 +2096,7 @@ namespace csvorbis
 		/// </summary>
 		/// <param name="n">The index to get the window table array at.</param>
 		/// <returns>The window table array at the given index.</returns>
-		internal float[] GetWindow(int n)
+		internal static float[] GetWindow(int n)
 		{
 			if (n < 0 || n > vwin.Length)
 				throw new ArgumentException("Went out of the window table's bounds.", "n");
@@ -2104,7 +2104,7 @@ namespace csvorbis
 			return vwin[n];
 		}
 
-		internal void ApplyWindow(ref float[] d, int[] winno, long[] blockSizes, int lW, int w, int nW)
+		internal static void ApplyWindow(ref float[] d, int[] winno, long[] blockSizes, int lW, int w, int nW)
 		{
 			lW = (w != 0) ? lW : 0;
 			nW = (w != 0) ? nW : 0;
