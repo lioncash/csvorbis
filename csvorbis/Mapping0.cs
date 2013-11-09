@@ -222,7 +222,6 @@ namespace csvorbis
 		{
 			lock (this)
 			{
-				//System.err.println("Mapping0.inverse");
 				DspState vd = vb.vd;
 				Info vi = vd.vi;
 				LookMapping0 look = (LookMapping0) l;

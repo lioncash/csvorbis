@@ -2104,7 +2104,7 @@ namespace csvorbis
 			return vwin[n];
 		}
 
-		internal static void ApplyWindow(ref float[] d, int[] winno, long[] blockSizes, int lW, int w, int nW)
+		internal static void ApplyWindow(ref float[] d, int[] winno, int[] blockSizes, int lW, int w, int nW)
 		{
 			lW = (w != 0) ? lW : 0;
 			nW = (w != 0) ? nW : 0;
@@ -2112,17 +2112,17 @@ namespace csvorbis
 			float[] windowLW = vwin[winno[lW]];
 			float[] windowNW = vwin[winno[nW]];
 
-			long n = blockSizes[w];
-			long ln = blockSizes[lW];
-			long rn = blockSizes[nW];
+			int n = blockSizes[w];
+			int ln = blockSizes[lW];
+			int rn = blockSizes[nW];
 
-			long leftBegin  = (n/4 - ln/4);
-			long leftEnd    = (leftBegin + ln/2);
+			int leftBegin  = (n/4 - ln/4);
+			int leftEnd    = (leftBegin + ln/2);
 
-			long rightBegin = (n/2 + n/4 - rn/4);
-			long rightEnd   = (rightBegin + rn/2);
+			int rightBegin = (n/2 + n/4 - rn/4);
+			int rightEnd   = (rightBegin + rn/2);
 
-			long i, p;
+			int i, p;
 			for (i = 0; i < leftBegin; i++)
 				d[i] = 0.0f;
 
