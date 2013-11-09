@@ -281,7 +281,6 @@ namespace csvorbis
 				}
 
 				// recover the residue, apply directly to the spectral envelope
-
 				for (int i = 0; i < info.submaps; i++)
 				{
 					int ch_in_bundle = 0;
@@ -305,7 +304,7 @@ namespace csvorbis
 						pcmbundle, zerobundle, ch_in_bundle);
 				}
 
-
+				// Channel coupling
 				for (int i = info.coupling_steps - 1; i >= 0; i--)
 				{
 					float[] pcmM = vb.pcm[info.coupling_mag[i]];
@@ -345,8 +344,7 @@ namespace csvorbis
 					}
 				}
 
-				//    /* compute and apply spectral envelope */
-
+				// Compute and apply spectral envelope
 				for (int i = 0; i < vi.Channels; i++)
 				{
 					float[] pcm = vb.pcm[i];
@@ -354,9 +352,8 @@ namespace csvorbis
 					look.floor_func[submap].inverse2(vb, look.floor_look[submap], floormemo[i], pcm);
 				}
 
-				// transform the PCM data; takes PCM vector, vb; modifies PCM vector
+				// Transform the PCM data; takes PCM vector, vb; modifies PCM vector
 				// only MDCT right now....
-
 				for (int i = 0; i < vi.Channels; i++)
 				{
 					float[] pcm = vb.pcm[i];
@@ -364,7 +361,7 @@ namespace csvorbis
 					((Mdct) vd.transform[vb.W][0]).backward(pcm, pcm);
 				}
 
-				// now apply the decoded pre-window time information
+				// Now apply the decoded pre-window time information
 				// NOT IMPLEMENTED
 
 				// window the data

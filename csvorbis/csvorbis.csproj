@@ -186,6 +186,7 @@
     <Compile Include="VorbisFile.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Window.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
