@@ -99,10 +99,10 @@ namespace csvorbis
 				byte u1 = s1[c];
 				byte u2 = s2[c];
 
-				if (u1 >= 'A')
+				if ('Z' >= u1 && u1 >= 'A')
 					u1 = (byte) (u1 - 'A' + 'a');
 
-				if (u2 >= 'A')
+				if ('Z' >= u2 && u2 >= 'A')
 					u2 = (byte) (u2 - 'A' + 'a');
 
 				if (u1 != u2)
@@ -125,16 +125,19 @@ namespace csvorbis
 			byte[] tag_byt = AE.GetBytes(tag);
 
 			int foo = query(tag_byt, count);
-			if (foo == -1) return null;
-			byte[] comment = user_comments[foo];
+			if (foo == -1)
+			{
+				return null;
+			}
 
+			byte[] comment = user_comments[foo];
 			for (int i = 0; i < comment_lengths[foo]; i++)
 			{
 				if (comment[i] == '=')
 				{
 					char[] comment_uni = AE.GetChars(comment);
 
-					return new string(comment_uni, i + 1, comment_lengths[foo] - (i + 1));
+					return new string(comment_uni, i+1, comment_lengths[foo] - (i+1));
 				}
 			}
 
@@ -144,14 +147,14 @@ namespace csvorbis
 		private int query(byte[] tag, int count)
 		{
 			int found = 0;
-			int taglen = tag.Length;
-			byte[] fulltag = new byte[taglen + 2];
+			int fulltaglen = tag.Length+1;
+			byte[] fulltag = new byte[fulltaglen];
 			Array.Copy(tag, 0, fulltag, 0, tag.Length);
 			fulltag[tag.Length] = (byte) '=';
 
 			for (int i = 0; i < comments; i++)
 			{
-				if (tagcompare(user_comments[i], fulltag, taglen))
+				if (tagcompare(user_comments[i], fulltag, fulltaglen))
 				{
 					if (count == found)
 					{
