@@ -28,6 +28,10 @@ using System.Runtime.CompilerServices;
 
 namespace csvorbis 
 {
+	/// <summary>
+	/// Normalized modified discrete cosine transform
+	/// power of two length transform only [64 &lt;= n ]
+	/// </summary>
 	internal class Mdct
 	{
 		//static private float cPI3_8=0.38268343236508977175f;
@@ -44,12 +48,11 @@ namespace csvorbis
 
 		internal void init(int n)
 		{
-			bitrev = new int[n/4];
-			trig = new float[n + n/4];
-
-			int n2 = (int) ((uint) n >> 1);
-			log2n = (int) Math.Round(Math.Log(n)/Math.Log(2));
+			this.bitrev = new int[n / 4];
+			this.trig = new float[n + n / 4];
+			this.log2n = (int)Math.Round(Math.Log(n) / Math.Log(2));
 			this.n = n;
+			int n2 = (n >> 1);
 
 			const int AE = 0;
 			const int AO = 1;
@@ -76,9 +79,9 @@ namespace csvorbis
 			for (int i = 0; i < n/8; i++)
 			{
 				int acc = 0;
-				for (int j = 0; (((uint) msb) >> j) != 0; j++)
+				for (int j = 0; (msb >> j) != 0; j++)
 				{
-					if (((((uint) msb >> j)) & i) != 0)
+					if (((msb >> j) & i) != 0)
 						acc |= 1 << j;
 				}
 
@@ -104,15 +107,15 @@ namespace csvorbis
 		internal void backward(float[] fin, float[] fout)
 		{
 			if (_x.Length < n/2)
-				_x=new float[n/2];
+				_x = new float[n/2];
 			if (_w.Length < n/2)
-				_w=new float[n/2];
+				_w = new float[n/2];
 
-			float[] x=_x;
-			float[] w=_w;
-			int n2=(int)((uint)n >> 1);
-			int n4=(int)((uint)n >> 2);
-			int n8=(int)((uint)n >> 3);
+			float[] x = _x;
+			float[] w = _w;
+			int n2 = (n >> 1);
+			int n4 = (n >> 2);
+			int n8 = (n >> 3);
 
 			// rotate + step 1
 			{
@@ -177,19 +180,19 @@ namespace csvorbis
 			int w2=n4;
 			int A=n2;
 
-			for(int i=0;i<n4;)
+			for(int i = 0; i < n4;)
 			{
-				float x0=x[xA] - x[xB];
+				float x0 = x[xA] - x[xB];
 				float x1;
 				w[w2+i]=x[xA++]+x[xB++];
 
 				x1=x[xA]-x[xB];
 				A-=4;
 
-				w[i++]=   x0 * trig[A] + x1 * trig[A+1];
-				w[i]=     x1 * trig[A] - x0 * trig[A+1];
+				w[i++]  = x0 * trig[A] + x1 * trig[A+1];
+				w[i]    = x1 * trig[A] - x0 * trig[A+1];
 
-				w[w2+i]=x[xA++]+x[xB++];
+				w[w2+i] = x[xA++] + x[xB++];
 				i++;
 			}
 
@@ -197,14 +200,14 @@ namespace csvorbis
 			{
 				for(int i=0;i<log2n-3;i++)
 				{
-					int k0=(int)((uint)n >> (i+2));
+					int k0= (n >> (i+2));
 					int k1=1 << (i+3);
 					int wbase=n2-2;
 
 					A=0;
 					float[] temp;
 
-					for(int r=0; r<((uint)k0>>2); r++)
+					for(int r=0; r < (k0>>2); r++)
 					{
 						int w1=wbase;
 						w2=w1-(k0>>1);
