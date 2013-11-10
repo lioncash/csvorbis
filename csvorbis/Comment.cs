@@ -264,7 +264,7 @@ namespace csvorbis
 			op.packet_base = new byte[opb.bytes()];
 			op.packet = 0;
 			op.bytes = opb.bytes();
-			Array.Copy(opb.buf(), 0, op.packet_base, 0, op.bytes);
+			Array.Copy(opb.GetBuffer(), 0, op.packet_base, 0, op.bytes);
 			op.b_o_s = 0;
 			op.e_o_s = 0;
 			op.granulepos = 0;

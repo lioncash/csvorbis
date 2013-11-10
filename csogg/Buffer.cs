@@ -26,28 +26,26 @@ using System;
 
 namespace csogg
 {
-	/// <summary>
-	/// Summary description for csBuffer.
-	/// </summary>
-	public class csBuffer
+	public sealed class csBuffer
 	{
 		private const int BUFFER_INCREMENT = 256;
 
-		private static readonly uint[] mask={
-												0x00000000,0x00000001,0x00000003,0x00000007,0x0000000f,
-												0x0000001f,0x0000003f,0x0000007f,0x000000ff,0x000001ff,
-												0x000003ff,0x000007ff,0x00000fff,0x00001fff,0x00003fff,
-												0x00007fff,0x0000ffff,0x0001ffff,0x0003ffff,0x0007ffff,
-												0x000fffff,0x001fffff,0x003fffff,0x007fffff,0x00ffffff,
-												0x01ffffff,0x03ffffff,0x07ffffff,0x0fffffff,0x1fffffff,
-												0x3fffffff,0x7fffffff,0xffffffff
-											};
+		private static readonly uint[] mask =
+		{
+			0x00000000,0x00000001,0x00000003,0x00000007,0x0000000f,
+			0x0000001f,0x0000003f,0x0000007f,0x000000ff,0x000001ff,
+			0x000003ff,0x000007ff,0x00000fff,0x00001fff,0x00003fff,
+			0x00007fff,0x0000ffff,0x0001ffff,0x0003ffff,0x0007ffff,
+			0x000fffff,0x001fffff,0x003fffff,0x007fffff,0x00ffffff,
+			0x01ffffff,0x03ffffff,0x07ffffff,0x0fffffff,0x1fffffff,
+			0x3fffffff,0x7fffffff,0xffffffff
+		};
 
-		private int ptr = 0;
-		private byte[] buffer = null;
-		private int endbit = 0;
-		private int endbyte = 0;
-		private int storage = 0;
+		private int ptr;
+		private byte[] buffer;
+		private int endbit;
+		private int endbyte;
+		private int storage;
 
 		public void writeinit() 
 		{
@@ -297,14 +295,9 @@ namespace csogg
 			return ret;
 		}
 
-		public byte[] buf()
+		public byte[] GetBuffer()
 		{
 			return buffer;
-		}
-
-		public csBuffer()
-		{
-			// Really a noop?
 		}
 	}
 }

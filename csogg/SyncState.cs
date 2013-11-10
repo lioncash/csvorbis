@@ -27,9 +27,14 @@ using System;
 namespace csogg
 {
 	/// <summary>
-	/// Summary description for SyncState.
+	/// Tracks the synchronization of the current page.
+	/// <para>
+	/// It is used during decoding to track the status of data as it is read in,
+	/// synchronized, verified, and parsed into pages belonging to the various
+	/// logical bistreams in the current physical bitstream link.
+	/// </para>
 	/// </summary>
-	public class SyncState
+	public sealed class SyncState
 	{
 		public byte[] data;
 		private int storage;
@@ -40,55 +45,73 @@ namespace csogg
 		private int headerbytes;
 		private int bodybytes;
 
+		/// <summary>
+		/// Used to reset the SyncState data.
+		/// </summary>
+		/// <returns>Zero is always returned.</returns>
 		public int clear()
 		{
-			data=null;
-			return(0);
+			data = null;
+			return 0;
 		}
 
-		// !!!!!!!!!!!!
-		//  byte[] buffer(int size){
+		/// <summary>
+		/// Used to provide a properly-sized buffer for writing.
+		/// <para>
+		/// Buffer space which has already been returned is cleared,
+		/// and the buffer is extended as necessary by the size plus
+		/// some additional bytes. Within the current implementation,
+		/// an extra 4096 bytes are allocated, but applications should
+		/// not rely on this additional buffer space.
+		/// </para>
+		/// </summary>
+		/// <param name="size">Size of the desired buffer.</param>
+		/// <returns>The overall size of the new buffer.</returns>
 		public int buffer(int size)
 		{
 			// first, clear out any space that has been previously returned
-			if(returned!=0)
+			if (returned != 0)
 			{
 				fill-=returned;
-				if(fill>0)
+				if (fill > 0)
 				{
 					Array.Copy(data, returned, data, 0, fill);
 				}
-				returned=0;
+
+				returned = 0;
 			}
 
-			if(size>storage-fill)
+			if (size > storage-fill)
 			{
 				// We need to extend the internal buffer
 				int newsize=size+fill+4096; // an extra page to be nice
-				if(data!=null)
+				if (data != null)
 				{
-					byte[] foo=new byte[newsize];
+					byte[] foo = new byte[newsize];
 					Array.Copy(data, 0, foo, 0, data.Length);
-					data=foo;
+					data = foo;
 				}
 				else
 				{
-					data=new byte[newsize];
+					data = new byte[newsize];
 				}
-				storage=newsize;
+
+				storage = newsize;
 			}
 
 			// expose a segment at least as large as requested at the fill mark
 			//    return((char *)oy->data+oy->fill);
 			//    return(data);
-			return(fill);
+			return fill;
 		}
 
 		public int wrote(int bytes)
 		{
-			if(fill+bytes>storage)return(-1);
+			if (fill+bytes>storage)
+				return -1;
+
 			fill+=bytes;
-			return(0);
+			return 0;
 		}
 
 		// sync the stream.  This is meant to be useful for finding page
@@ -105,59 +128,67 @@ namespace csogg
 			int page=returned;
 			int next;
 			int bytes=fill-returned;
-  
-			if(headerbytes==0)
+
+			if (headerbytes == 0)
 			{
 				int _headerbytes,i;
-				if(bytes<27)return(0); // not enough for a header
-    
+
+				// If we don't have enough bytes for the header.
+				if (bytes < 27)
+					return 0;
+
 				/* verify capture pattern */
-				//!!!!!!!!!!!
-				if(data[page]!='O' ||
+				if (data[page+0]!='O' ||
 					data[page+1]!='g' ||
 					data[page+2]!='g' ||
 					data[page+3]!='S')
 				{
 					headerbytes=0;
 					bodybytes=0;
-  
+
 					// search for possible capture
 					next=0;
-					for(int ii=0; ii<bytes-1; ii++)
+					for (int ii=0; ii<bytes-1; ii++)
 					{
-						if(data[page+1+ii]=='O'){next=page+1+ii; break;}
+						if (data[page + 1 + ii] == 'O')
+						{
+							next=page+1+ii; break;
+						}
 					}
-					//next=memchr(page+1,'O',bytes-1);
-					if(next==0) next=fill;
+
+					if (next == 0)
+						next = fill;
 
 					returned=next;
 					return(-(next-page));
 				}
 				_headerbytes=(data[page+26]&0xff)+27;
-				if(bytes<_headerbytes)return(0); // not enough for header + seg table
-    
+
+				// Not enough for header + seg table
+				if (bytes < _headerbytes)
+					return 0;
+
 				// count up body length in the segment table
-    
-				for(i=0;i<(data[page+26]&0xff);i++)
+				for (i=0;i<(data[page+26]&0xff);i++)
 				{
 					bodybytes+=(data[page+27+i]&0xff);
 				}
 				headerbytes=_headerbytes;
 			}
-  
-			if(bodybytes+headerbytes>bytes)return(0);
-  
+
+			if (bodybytes+headerbytes>bytes)
+				return 0;
+
 			// The whole test page is buffered.  Verify the checksum
-			lock(chksum)
+			lock (chksum)
 			{
 				// Grab the checksum bytes, set the header field to zero
-    
 				Array.Copy(data, page+22, chksum, 0, 4);
 				data[page+22]=0;
 				data[page+23]=0;
 				data[page+24]=0;
 				data[page+25]=0;
-    
+
 				// set up a temp page struct and recompute the checksum
 				Page log=pageseek_p;
 				log.header_base=data;
@@ -170,7 +201,7 @@ namespace csogg
 				log.checksum();
 
 				// Compare
-				if(chksum[0]!=data[page+22] ||
+				if (chksum[0]!=data[page+22] ||
 					chksum[1]!=data[page+23] ||
 					chksum[2]!=data[page+24] ||
 					chksum[3]!=data[page+25])
@@ -184,61 +215,53 @@ namespace csogg
 					bodybytes=0;
 					// search for possible capture
 					next=0;
-					for(int ii=0; ii<bytes-1; ii++)
+					for (int ii=0; ii<bytes-1; ii++)
 					{
-						if(data[page+1+ii]=='O'){next=page+1+ii; break;}
+						if (data[page + 1 + ii] == 'O')
+						{
+							next=page+1+ii; break;
+						}
 					}
-					//next=memchr(page+1,'O',bytes-1);
-					if(next==0) next=fill;
+
+					if (next == 0)
+						next = fill;
+
 					returned=next;
 					return(-(next-page));
 				}
 			}
-  
+
 			// yes, have a whole page all ready to go
-		{
-			page=returned;
-
-			if(og!=null)
 			{
-				og.header_base=data;
-				og.header=page;
-				og.header_len=headerbytes;
-				og.body_base=data;
-				og.body=page+headerbytes;
-				og.body_len=bodybytes;
+				page=returned;
+
+				if (og != null)
+				{
+					og.header_base=data;
+					og.header=page;
+					og.header_len=headerbytes;
+					og.body_base=data;
+					og.body=page+headerbytes;
+					og.body_len=bodybytes;
+				}
+
+				unsynced=0;
+				returned+=(bytes=headerbytes+bodybytes);
+				headerbytes=0;
+				bodybytes=0;
+				return bytes;
 			}
-
-			unsynced=0;
-			returned+=(bytes=headerbytes+bodybytes);
-			headerbytes=0;
-			bodybytes=0;
-			return(bytes);
-		}
-			//  headerbytes=0;
-			//  bodybytes=0;
-			//  next=0;
-			//  for(int ii=0; ii<bytes-1; ii++){
-			//    if(data[page+1+ii]=='O'){next=page+1+ii;}
-			//  }
-			//  //next=memchr(page+1,'O',bytes-1);
-			//  if(next==0) next=fill;
-			//  returned=next;
-			//  return(-(next-page));
 		}
 
-
-		// sync the stream and get a page.  Keep trying until we find a page.
-		// Supress 'sync errors' after reporting the first.
-		//
-		// return values:
-		//  -1) recapture (hole in data)
-		//   0) need more data
-		//   1) page returned
-		//
-		// Returns pointers into buffered data; invalidated by next call to
-		// _stream, _clear, _init, or _buffer
-
+		/// <summary>
+		/// Takes the data stored in this SyncState and inserts it into a given Page.
+		/// </summary>
+		/// <param name="og">The Page to insert all the data from this SyncState into.</param>
+		/// <returns>
+		/// -1 returned if stream has not yet captured sync (bytes were skipped).
+		/// 0 returned if more data needed or an internal error occurred.
+		/// 1 indicated a page was synced and returned.
+		/// </returns>
 		public int pageout(Page og)
 		{
 			// all we need to do is verify a page at the head of the stream
@@ -248,28 +271,32 @@ namespace csogg
 			while(true)
 			{
 				int ret=pageseek(og);
-				if(ret>0)
+				if (ret > 0)
 				{
 					// have a page
-					return(1);
+					return 1;
 				}
-				if(ret==0)
+				if (ret == 0)
 				{
 					// need more data
-					return(0);
+					return 0;
 				}
-    
+
 				// head did not start a synced page... skipped some bytes
-				if(unsynced==0)
+				if (unsynced == 0)
 				{
 					unsynced=1;
-					return(-1);
+					return -1;
 				}
 				// loop. keep looking
 			}
 		}
 
-		// clear things to an initial state.  Good to call, eg, before seeking
+		/// <summary>
+		/// Resets the internal counters of this 
+		/// SyncState to its initial values.
+		/// </summary>
+		/// <returns>Zero is always returned.</returns>
 		public int reset()
 		{
 			fill=0;
@@ -277,13 +304,14 @@ namespace csogg
 			unsynced=0;
 			headerbytes=0;
 			bodybytes=0;
-			return(0);
+			return 0;
 		}
-		public void init(){}
 
-		public SyncState()
+		/// <summary>
+		/// Initializes this SyncState.
+		/// </summary>
+		public void init()
 		{
-			// No constructor needed
 		}
 	}
 }

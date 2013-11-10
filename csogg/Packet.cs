@@ -25,27 +25,35 @@
 namespace csogg
 {
 	/// <summary>
-	/// Summary description for Packet.
+	/// Used to encapsulate the data and metadata belonging
+	/// to a single raw Ogg/Vorbis packet
 	/// </summary>
-	public class Packet
+	public sealed class Packet
 	{
 		public byte[] packet_base;
 		public int packet;
 		public int bytes;
+
+		/// <summary>
+		/// Set after we've written the initial page
+		/// of a logical bitstream
+		/// </summary>
 		public int b_o_s;
+
+		/// <summary>
+		/// Set when we have buffered the last packet in the logical bitstream
+		/// </summary>
 		public int e_o_s;
 
 		public long granulepos;
 
-		public long packetno; // sequence number for decode; the framing
-		// knows where there's a hole in the data,
-		// but we need coupling so that the codec
-		// (which is in a seperate abstraction
-		// layer) also knows about the gap
-
-		public Packet()
-		{
-			// No constructor
-		}
+		/// <summary>
+		/// Sequence number for decode; the framing
+		/// knows where there's a hole in the data,
+		/// but we need coupling so that the codec
+		/// (which is in a seperate abstraction
+		/// layer) also knows about the gap
+		/// </summary>
+		public long packetno;
 	}
 }
